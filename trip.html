@@ -46,6 +46,9 @@ h1{margin:0 0 6px;font-size:28px;letter-spacing:-0.025em}
 .links a{display:block;padding:10px 0;border-top:1px solid var(--line);font-weight:600}
 .links a:first-child{border-top:0}
 .missing{text-align:center;padding:80px 16px}
+.fav{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);color:var(--ink)}
+.fav:first-child{border-top:0}
+.fav .st{color:#ff9f0a;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -80,7 +83,9 @@ function render(t) {
   if (t.notes) h += `<div class="section">游记</div><div class="card notes">${String(t.notes).split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
   const links = (t.links || []).filter(l => l && safeUrl(l.url));
   if (links.length) h += `<div class="section">链接</div><div class="card links">${links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.title || l.url)} ›</a>`).join('')}</div>`;
+  h += `<div id="tripFavs"></div>`;
   app.innerHTML = h + '</div>';
+  showFavs(t);
   if (!days.length) return;
 
   // read-only day view: tabs + map + timeline (same idea as guide.html)
@@ -103,6 +108,23 @@ function render(t) {
   }
   document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) show(+b.dataset.i); });
   show(0);
+}
+
+// public favourites (no sign-in needed: rules let anyone read non-private docs)
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+async function publicFavs(filter) {
+  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
+  if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+  let q = firebase.firestore().collection('favorites').where('private', '==', false);
+  if (filter) q = q.where('tripId', '==', filter);
+  return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function showFavs(t) {
+  try {
+    const fs = (await publicFavs(t.id)).sort((a, b) => b.rating - a.rating); if (!fs.length) return;
+    document.getElementById('tripFavs').innerHTML = `<div class="section">这次旅行的收藏</div><div class="card">${fs.map(f => `<a class="fav" href="favorites.html?trip=${encodeURIComponent(t.id)}"><span>${esc(f.name)}</span><span class="st">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span></a>`).join('')}</div>`;
+  } catch (e) {}
 }
 if (!id) notFound();
 else fetch('trips.json', { cache: 'no-cache' }).then(r => r.json()).then(d => { const t = (d.trips || []).find(x => x.id === id); t && t.start && t.end ? render(t) : notFound(); }).catch(notFound);

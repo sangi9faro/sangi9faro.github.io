@@ -26,7 +26,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);le
 a{color:inherit;text-decoration:none}
 .wrap{max-width:680px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
 h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em}
-.stats{margin:4px 0 18px;color:var(--muted);font-size:15px}
+.stats{margin:4px 0 6px;color:var(--muted);font-size:15px}
+.nav2{display:inline-flex;background:var(--grouped);border-radius:980px;padding:3px;margin-bottom:12px}
+.nav2 a{border-radius:980px;padding:5px 16px;font-size:14px;font-weight:600;color:var(--muted)}
+.nav2 a.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.favline{display:inline-block;margin:0 0 16px;color:var(--accent);font-weight:600;font-size:15px}
 .section{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:26px 2px 10px}
 #map{height:300px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--grouped)}
 .pop a{color:var(--accent);font-weight:600}
@@ -55,8 +59,10 @@ h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em}
 </head>
 <body>
 <main class="wrap">
+  <nav class="nav2" aria-label="导航"><a class="on" href="./" aria-current="page">旅行</a><a href="favorites.html">收藏</a></nav>
   <h1 id="title">我的旅行</h1>
   <div class="stats" id="stats">加载中…</div>
+  <a class="favline" id="favLine" href="favorites.html" hidden></a>
 
   <div id="map" role="region" aria-label="足迹地图"></div>
 
@@ -131,6 +137,19 @@ function render(data) {
         .bindPopup(`<div class="pop"><b>${esc(t.title)}</b> · ${esc(p.name)}<br><a href="${esc(target(t))}">进入这次旅行 ›</a></div>`); }); });
   if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 9 }); else map.setView([20, 110], 3);
 }
+
+
+// public favourites (no sign-in needed: rules let anyone read non-private docs)
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+async function publicFavs(filter) {
+  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
+  if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+  let q = firebase.firestore().collection('favorites').where('private', '==', false);
+  if (filter) q = q.where('tripId', '==', filter);
+  return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() }));
+}
+publicFavs().then(fs => { const l = $('#favLine'); l.textContent = `收藏了 ${fs.length} 个地方 ›`; l.hidden = false; }).catch(() => {});
 
 fetch('trips.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(render)
   .catch(() => { $('#stats').innerHTML = '<span class="err">trips.json 读取失败，检查一下文件格式。</span>'; });

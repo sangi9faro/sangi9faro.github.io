@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>收藏 · Faro 的旅行</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<style>
+:root{
+  --bg:#f5f5f7; --surface:#fff; --grouped:#f2f2f7; --ink:#1d1d1f; --muted:#86868b; --line:rgba(60,60,67,.12); --accent:#0071e3; --red:#ff3b30; --star:#ff9f0a;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); --shadow-lg:0 8px 30px rgba(0,0,0,.16);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-lg:0 8px 30px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-lg:0 8px 30px rgba(0,0,0,.6);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 6px;max-width:1280px;margin:0 auto}
+.top .l{display:flex;align-items:baseline;gap:12px;min-width:0}
+.top h1{margin:0;font-size:24px;letter-spacing:-0.02em}
+.auth{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.auth img{width:28px;height:28px;border-radius:50%}
+.chipbtn{border:0;border-radius:980px;padding:6px 12px;background:var(--grouped);font-size:13.5px;font-weight:600;cursor:pointer}
+.chipbtn.primary{background:var(--accent);color:#fff}
+.stats{max-width:1280px;margin:0 auto;padding:0 16px 10px;color:var(--muted);font-size:14px}
+/* layout: map on top (phone), map left (desktop) */
+.layout{max-width:1280px;margin:0 auto;padding:0 16px 120px}
+#map{height:48vh;min-height:280px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--grouped)}
+@media (min-width:900px){.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+  #map{position:sticky;top:12px;height:calc(100vh - 110px)}}
+.panel{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:12px;margin-top:12px}
+@media (min-width:900px){.panel:first-child{margin-top:0}}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.cat{border:1px solid var(--line);background:var(--bg);border-radius:980px;padding:5px 10px;font-size:13.5px;cursor:pointer}
+.cat.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{display:inline-flex;background:var(--grouped);border-radius:980px;padding:3px}
+.seg button{border:0;background:none;border-radius:980px;padding:4px 12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.filters select,.filters input{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-width:0}
+.filters input{flex:1 1 160px}
+.status{font-size:13px;color:var(--muted);margin:10px 2px 0}
+.notice{background:color-mix(in srgb,var(--star) 18%,var(--surface));border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+/* list */
+.item{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:0}
+.item .emo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:var(--grouped)}
+.item b{display:block;font-size:15.5px;line-height:1.3}
+.item .m{font-size:12.5px;color:var(--muted)}
+.item .n{font-size:13.5px;margin-top:2px;color:var(--ink);opacity:.85}
+.stars{color:var(--star);letter-spacing:1px;white-space:nowrap}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.tags span{font-size:11.5px;background:var(--grouped);border-radius:6px;padding:1px 6px;color:var(--muted)}
+.own{display:flex;gap:6px;margin-top:6px}
+.own button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 10px;font-size:12.5px;cursor:pointer}
+.own .del{color:var(--red)} .own .armed{background:var(--red);color:#fff;border-color:var(--red)}
+.empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:14px}
+/* map pins */
+.pin{display:flex;align-items:center;gap:2px;background:var(--c);color:#fff;border:2px solid #fff;border-radius:16px;padding:1px 6px 1px 3px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.25);white-space:nowrap}
+.pin span{font-size:15px;line-height:20px}
+.pop b{font-size:15px}.pop .m{color:#86868b;font-size:12.5px}.pop p{margin:4px 0}
+.pop .acts{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+/* fab + sheet */
+#fab{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;box-shadow:var(--shadow-lg);cursor:pointer;z-index:1100}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1200;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+@media (min-width:600px){.sheet-bg{align-items:center}.sheet{border-radius:20px}}
+.sheet h2{margin:0;font-size:19px}
+.sheet label{display:grid;gap:4px;font-size:12.5px;color:var(--muted);min-width:0}
+.sheet input,.sheet select,.sheet textarea{font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.starpick{display:flex;gap:4px}
+.starpick button{border:0;background:none;font-size:32px;line-height:1;color:var(--line);cursor:pointer;padding:2px}
+.starpick button.on{color:var(--star)}
+.locbtns{display:flex;gap:6px;flex-wrap:wrap}
+.coord{font-size:13px;color:var(--muted)}
+.check{display:flex!important;grid-template-columns:none;align-items:center;gap:8px;font-size:15px!important;color:var(--ink)!important}
+.check input{width:20px;height:20px}
+.acts2{display:flex;justify-content:flex-end;gap:8px}
+#pickHint{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:1300;background:var(--ink);color:var(--bg);border-radius:980px;padding:8px 14px;font-size:14px;font-weight:600;display:flex;gap:10px;align-items:center;box-shadow:var(--shadow-lg)}
+#pickHint button{border:0;background:var(--bg);color:var(--ink);border-radius:980px;padding:3px 10px;font-size:13px;cursor:pointer}
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:980px;font-weight:600;font-size:14px;transition:opacity .25s,transform .25s;pointer-events:none;z-index:1500;max-width:92vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="l"><a href="./">← 我的旅行</a><h1>收藏</h1></div>
+  <div class="auth" id="auth"></div>
+</header>
+<div class="stats" id="stats">加载中…</div>
+
+<div class="layout">
+  <div id="map" role="region" aria-label="收藏地图"></div>
+  <div>
+    <div class="panel filters">
+      <div class="row" id="cats" role="group" aria-label="类型"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="seg" id="ratingSeg" role="group" aria-label="评分"><button data-r="0" class="on">全部</button><button data-r="4">≥4★</button><button data-r="5">5★</button></div>
+        <select id="tripSel" aria-label="旅行"><option value="">全部旅行</option></select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="q" type="search" placeholder="搜索名称、城市、标签" aria-label="搜索">
+        <div class="seg" id="sortSeg" role="group" aria-label="排序"><button data-s="rating" class="on">按评分</button><button data-s="date">按日期</button></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="notice" id="notOwner" hidden>这个账号没有编辑权限，只能查看公开的收藏。</div>
+      <div class="notice" id="settings" hidden></div>
+    </div>
+    <div class="panel"><div id="list"><div class="empty">加载中…</div></div></div>
+  </div>
+</div>
+
+<button id="fab" aria-label="添加收藏" hidden>＋</button>
+<div id="pickHint" hidden>在地图上点一下选位置 <button id="pickCancel">取消</button></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+// Replace with your Google account uid (shown under 设置 after signing in), and the same value in firestore.rules
+const OWNER_UID = 'OWNER_UID';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
+const CATS = { food: ['🍜', '餐馆', '#ff3b30'], cafe: ['☕', '咖啡', '#a2845e'], bar: ['🍸', '酒吧', '#af52de'], spot: ['📍', '景点', '#007aff'], stay: ['🏨', '住宿', '#ff9500'], shop: ['🛍️', '购物', '#ff2d55'], other: ['⭐', '其他', '#8e8e93'] };
+const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+const price = n => n ? '¥'.repeat(n) : '';
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+let toastT = 0;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800); }
+
+let favs = [], trips = [], auth = null, db = null, user = null, owner = false, unsub = null;
+const F = { cats: new Set(Object.keys(CATS)), min: 0, trip: new URLSearchParams(location.search).get('trip') || '', q: '', sort: 'rating' };
+
+/* ---------- map ---------- */
+const map = L.map('map', { zoomControl: false }).setView([20, 110], 3);
+L.control.zoom({ position: 'topright' }).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+const cluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 }); map.addLayer(cluster);
+const markers = {};
+let fitted = false;
+const pinIcon = f => { const [e, , c] = CATS[f.category] || CATS.other;
+  return L.divIcon({ className: '', html: `<div class="pin" style="--c:${c}"><span>${e}</span>${f.rating}★</div>`, iconSize: [46, 26], iconAnchor: [23, 13], popupAnchor: [0, -14] }); };
+function popupHtml(f) {
+  const [e, n] = CATS[f.category] || CATS.other, link = safeUrl(f.link);
+  return `<div class="pop"><b>${e} ${esc(f.name)}</b>${f.private ? ' 🔒' : ''}<div><span class="stars" style="color:#ff9f0a">${stars(f.rating)}</span> ${price(f.price)}</div>
+    ${f.note ? `<p>${esc(f.note)}</p>` : ''}<div class="m">${esc([f.city, f.country].filter(Boolean).join(' · '))}${f.visitedAt ? ' · ' + esc(f.visitedAt) : ''} · ${n}</div>
+    ${f.tags && f.tags.length ? `<div class="tags">${f.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+    <div class="acts"><a href="https://www.google.com/maps/search/?api=1&query=${+f.lat},${+f.lng}" target="_blank" rel="noopener">📍 导航</a>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">🔗 链接</a>` : ''}</div>
+    ${owner ? `<div class="own"><button data-edit="${esc(f.id)}">改</button><button class="del" data-del="${esc(f.id)}">删</button></div>` : ''}</div>`;
+}
+map.on('popupopen', e => bindOwn(e.popup.getElement()));
+
+/* ---------- filters ---------- */
+$('#cats').innerHTML = Object.entries(CATS).map(([k, [e, n]]) => `<button class="cat on" data-c="${k}" aria-pressed="true">${e} ${n}</button>`).join('');
+$('#cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; const k = b.dataset.c;
+  F.cats.has(k) ? F.cats.delete(k) : F.cats.add(k); b.classList.toggle('on', F.cats.has(k)); b.setAttribute('aria-pressed', F.cats.has(k)); render(); });
+$('#ratingSeg').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; F.min = +b.dataset.r; document.querySelectorAll('#ratingSeg button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('#sortSeg').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; F.sort = b.dataset.s; document.querySelectorAll('#sortSeg button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('#tripSel').addEventListener('change', e => { F.trip = e.target.value; fitted = false; render(); });
+$('#q').addEventListener('input', e => { F.q = e.target.value.trim().toLowerCase(); render(); });
+const tripName = id => (trips.find(t => t.id === id) || {}).title || id;
+function filtered() {
+  return favs.filter(f => F.cats.has(f.category in CATS ? f.category : 'other') && f.rating >= F.min && (!F.trip || f.tripId === F.trip)
+      && (!F.q || [f.name, f.city, f.country, ...(f.tags || [])].join(' ').toLowerCase().includes(F.q)))
+    .sort((a, b) => F.sort === 'date' ? (b.visitedAt || '').localeCompare(a.visitedAt || '') || b.rating - a.rating
+                                       : b.rating - a.rating || (b.visitedAt || '').localeCompare(a.visitedAt || ''));
+}
+
+/* ---------- render ---------- */
+function render() {
+  const list = filtered();
+  const avg = favs.length ? (favs.reduce((s, f) => s + f.rating, 0) / favs.length).toFixed(1) : '–';
+  $('#stats').textContent = `收藏 ${favs.length} 个地方 · 平均 ${avg}★ · ${new Set(favs.map(f => f.city).filter(Boolean)).size} 个城市`;
+  cluster.clearLayers(); for (const k in markers) delete markers[k];
+  list.forEach(f => { const m = L.marker([f.lat, f.lng], { icon: pinIcon(f) }).bindPopup(() => popupHtml(f), { maxWidth: 260 }); markers[f.id] = m; cluster.addLayer(m); });
+  if (list.length && !fitted) { map.fitBounds(list.map(f => [f.lat, f.lng]), { padding: [30, 30], maxZoom: 15 }); fitted = true; }
+  $('#list').innerHTML = list.length ? list.map(f => { const [e] = CATS[f.category] || CATS.other;
+    return `<div class="item" data-id="${esc(f.id)}"><span class="emo">${e}</span>
+      <div><b>${esc(f.name)}${f.private ? ' 🔒' : ''}</b><div class="m">${esc([f.city, f.visitedAt, price(f.price), f.tripId ? tripName(f.tripId) : ''].filter(Boolean).join(' · '))}</div>
+        ${f.note ? `<div class="n">${esc(f.note)}</div>` : ''}${f.tags && f.tags.length ? `<div class="tags">${f.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+        ${owner ? `<div class="own"><button data-edit="${esc(f.id)}">改</button><button class="del" data-del="${esc(f.id)}">删</button></div>` : ''}</div>
+      <span class="stars">${stars(f.rating)}</span></div>`; }).join('')
+    : `<div class="empty">${favs.length ? '没有符合筛选的收藏。' : '还没有收藏。登录后点右下角的＋添加第一个地方。'}</div>`;
+}
+$('#list').addEventListener('click', e => {
+  if (e.target.closest('.own')) return;
+  const it = e.target.closest('.item'); if (!it) return; const m = markers[it.dataset.id]; if (!m) return;
+  if (innerWidth < 900) document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  cluster.zoomToShowLayer(m, () => { map.setView(m.getLatLng(), Math.max(map.getZoom(), 16)); m.openPopup(); });
+});
+bindOwn($('#list'));
+
+/* ---------- owner actions: edit / delete with inline double-confirm ---------- */
+let armed = null;
+function bindOwn(root) {
+  if (!root || root.dataset.bound) return; root.dataset.bound = '1';
+  root.addEventListener('click', async e => {
+    const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+    if (ed) { e.stopPropagation(); map.closePopup(); openForm(favs.find(f => f.id === ed.dataset.edit)); }
+    if (del) { e.stopPropagation(); const id = del.dataset.del;
+      if (armed !== id) { armed = id; del.textContent = '确认删除？'; del.classList.add('armed');
+        setTimeout(() => { if (armed === id) { armed = null; del.textContent = '删'; del.classList.remove('armed'); } }, 3000); return; }
+      armed = null; map.closePopup();
+      try { await db.collection('favorites').doc(id).delete(); toast('已删除'); } catch (err) { toast(errMsg(err)); } }
+  });
+}
+const errMsg = err => !user ? '请先登录' : err && err.code === 'permission-denied' ? '没有权限（规则里的 OWNER_UID 还没填，或者不是你的账号）' : err && /unavailable|network/i.test(err.code || err.message || '') ? '网络问题，稍后再试' : '保存失败：' + ((err && err.code) || '未知错误');
+
+/* ---------- add / edit form ---------- */
+let form = null, tempMarker = null;
+function sheetHtml(f) {
+  return `<div class="sheet-bg" id="sheetBg"><form class="sheet" id="favForm" novalidate>
+    <h2>${f.id ? '修改收藏' : '添加收藏'}</h2>
+    <label>名称<input id="fName" maxlength="60" value="${esc(f.name)}" required></label>
+    <div class="two"><label>类型<select id="fCat">${Object.entries(CATS).map(([k, [e, n]]) => `<option value="${k}" ${f.category === k ? 'selected' : ''}>${e} ${n}</option>`).join('')}</select></label>
+      <label>价格<select id="fPrice">${['不填', '¥', '¥¥', '¥¥¥', '¥¥¥¥'].map((t, i) => `<option value="${i}" ${f.price === i ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
+    <div><span class="coord">评分</span><div class="starpick" id="fStars" role="radiogroup" aria-label="评分">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" role="radio" aria-label="${i} 星" aria-checked="${i === f.rating}" class="${i <= f.rating ? 'on' : ''}">★</button>`).join('')}</div></div>
+    <label>短评<textarea id="fNote" rows="2" maxlength="500">${esc(f.note)}</textarea></label>
+    <div class="two"><label>城市<input id="fCity" maxlength="30" value="${esc(f.city)}"></label><label>国家/地区<input id="fCountry" maxlength="30" value="${esc(f.country)}"></label></div>
+    <div class="two"><label>旅行<select id="fTrip"><option value="">不属于某次旅行</option>${trips.map(t => `<option value="${esc(t.id)}" ${f.tripId === t.id ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}</select></label>
+      <label>日期<input id="fDate" type="date" value="${esc(f.visitedAt || '')}"></label></div>
+    <label>标签（用逗号或空格分开，最多 8 个）<input id="fTags" value="${esc((f.tags || []).join('，'))}"></label>
+    <label>链接（谷歌地图、小红书、相册）<input id="fLink" type="url" maxlength="500" value="${esc(f.link)}" placeholder="https://"></label>
+    <div><span class="coord">位置</span><div class="locbtns" style="margin-top:4px"><button type="button" class="chipbtn" id="fGeo">📍 用我现在的位置</button><button type="button" class="chipbtn" id="fPick">🗺️ 在地图上点一下</button></div>
+      <input id="fGlink" placeholder="或粘贴谷歌地图链接" style="margin-top:6px"><div class="coord" id="fCoord" style="margin-top:4px">${f.lat != null ? `📍 ${(+f.lat).toFixed(5)}, ${(+f.lng).toFixed(5)}` : '还没有位置'}</div></div>
+    <label class="check"><input type="checkbox" id="fPrivate" ${f.private ? 'checked' : ''}> 仅自己可见</label>
+    <div class="acts2"><button type="button" class="chipbtn" id="fCancel">取消</button><button type="submit" class="chipbtn primary" id="fSave">保存</button></div>
+  </form></div>`;
+}
+function openForm(f) {
+  if (!owner) return;
+  form = f ? { ...f } : { id: null, name: '', category: 'food', rating: 5, note: '', city: '', country: '', tripId: F.trip || null, visitedAt: todayStr(), price: 0, tags: [], link: '', private: false, lat: null, lng: null };
+  document.body.insertAdjacentHTML('beforeend', sheetHtml(form));
+  if (form.lat != null) setTemp(form.lat, form.lng);
+  const s = $('#sheetBg');
+  s.addEventListener('click', e => { if (e.target === s) closeForm(); });
+  $('#fStars').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; form.rating = +b.dataset.v;
+    $('#fStars').querySelectorAll('button').forEach(x => { x.classList.toggle('on', +x.dataset.v <= form.rating); x.setAttribute('aria-checked', +x.dataset.v === form.rating); }); });
+  $('#fCancel').addEventListener('click', closeForm);
+  $('#fGeo').addEventListener('click', useMyLocation);
+  $('#fPick').addEventListener('click', () => { s.hidden = true; $('#pickHint').hidden = false; });
+  $('#fGlink').addEventListener('input', e => { const v = e.target.value.trim(); if (!v) return; const r = parseGmaps(v);
+    if (r === 'short') $('#fCoord').textContent = '这是短链接，网页读不出坐标。请在浏览器打开后复制完整链接。';
+    else if (r) { setLoc(r[0], r[1]); map.setView(r, 16); } else $('#fCoord').textContent = '没识别出坐标，换完整的谷歌地图链接，或者在地图上点一下。'; });
+  $('#favForm').addEventListener('submit', e => { e.preventDefault(); save(); });
+  $('#fName').focus();
+}
+function closeForm() { const s = $('#sheetBg'); if (s) s.remove(); $('#pickHint').hidden = true; form = null; if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; } }
+function setTemp(lat, lng) { if (tempMarker) tempMarker.setLatLng([lat, lng]); else tempMarker = L.marker([lat, lng], { zIndexOffset: 3000 }).addTo(map); }
+function setLoc(lat, lng) { form.lat = +(+lat).toFixed(6); form.lng = +(+lng).toFixed(6); setTemp(form.lat, form.lng); const c = $('#fCoord'); if (c) c.textContent = `📍 ${form.lat.toFixed(5)}, ${form.lng.toFixed(5)}`; }
+map.on('click', e => { if (!form || $('#pickHint').hidden) return; setLoc(e.latlng.lat, e.latlng.lng); $('#pickHint').hidden = true; $('#sheetBg').hidden = false; });
+$('#pickCancel').addEventListener('click', () => { $('#pickHint').hidden = true; if ($('#sheetBg')) $('#sheetBg').hidden = false; });
+function useMyLocation() {
+  if (!navigator.geolocation) return toast('这个浏览器不支持定位，可以在地图上点一下或粘贴链接');
+  $('#fCoord').textContent = '正在定位…';
+  navigator.geolocation.getCurrentPosition(p => { setLoc(p.coords.latitude, p.coords.longitude); map.setView([p.coords.latitude, p.coords.longitude], 16); },
+    () => { $('#fCoord').textContent = form && form.lat != null ? `📍 ${form.lat.toFixed(5)}, ${form.lng.toFixed(5)}` : '还没有位置';
+      toast('没拿到位置（可能拒绝了定位）。可以在地图上点一下，或粘贴谷歌地图链接'); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+}
+function parseGmaps(u) {
+  if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(u)) return 'short';
+  let s = u; try { s = decodeURIComponent(u); } catch (e) {}
+  for (const p of [/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/, /[?&](?:q|query)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/, /[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/, /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/]) {
+    const m = s.match(p); if (m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180) return [+m[1], +m[2]]; }
+  return null;
+}
+async function save() {
+  const name = $('#fName').value.trim(), link = $('#fLink').value.trim();
+  if (!name) return toast('先填名称');
+  if (form.lat == null) return toast('先设置位置');
+  if (link && !safeUrl(link)) return toast('链接要以 http 或 https 开头');
+  const tags = $('#fTags').value.split(/[,，、\s]+/).map(t => t.trim().slice(0, 12)).filter(Boolean).slice(0, 8);
+  const now = Date.now(), date = $('#fDate').value;
+  const doc = { name: name.slice(0, 60), category: $('#fCat').value, lat: form.lat, lng: form.lng, rating: form.rating, note: $('#fNote').value.trim().slice(0, 500),
+    city: $('#fCity').value.trim().slice(0, 30), country: $('#fCountry').value.trim().slice(0, 30), tripId: $('#fTrip').value || null,
+    visitedAt: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null, price: +$('#fPrice').value, tags, link, private: $('#fPrivate').checked, at: form.at || now, updatedAt: now };
+  const btn = $('#fSave'); btn.disabled = true;
+  const ref = form.id ? db.collection('favorites').doc(form.id) : db.collection('favorites').doc();
+  // with offline cache the write is queued locally and resolves once the server confirms
+  const write = ref.set(doc);
+  const done = await Promise.race([write.then(() => 'ok', err => err), new Promise(r => setTimeout(() => r('pending'), 8000))]);
+  btn.disabled = false;
+  if (done === 'ok') { toast('已保存'); closeForm(); }
+  else if (done === 'pending') { toast('已保存到本机，联网后会自动同步'); closeForm(); }
+  else toast(errMsg(done));
+}
+$('#fab').addEventListener('click', () => openForm(null));
+
+/* ---------- auth UI ---------- */
+function renderAuth() {
+  const a = $('#auth');
+  if (!auth) { a.innerHTML = ''; return; }
+  if (!user || user.isAnonymous) { a.innerHTML = `<button class="chipbtn primary" id="signIn">登录</button>`; $('#signIn').onclick = signIn; }
+  else { a.innerHTML = `${user.photoURL ? `<img src="${esc(user.photoURL)}" alt="">` : ''}<button class="chipbtn" id="gear" aria-label="设置">⚙︎</button><button class="chipbtn" id="signOut">退出</button>`;
+    $('#signOut').onclick = () => auth.signOut(); $('#gear').onclick = () => { const s = $('#settings'); s.hidden = !s.hidden; }; }
+  $('#settings').innerHTML = user ? `设置 · 当前账号 uid：<code id="uid" style="word-break:break-all">${esc(user.uid)}</code> <button class="chipbtn" id="copyUid">复制</button>` : '';
+  if (user) $('#copyUid').onclick = () => navigator.clipboard.writeText(user.uid).then(() => toast('已复制 uid'), () => toast('复制失败，手动选中复制'));
+  $('#notOwner').hidden = !(user && !owner);
+  $('#fab').hidden = !owner;
+}
+async function signIn() {
+  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch (err) { toast(err.code === 'auth/popup-blocked' ? '弹窗被浏览器拦截了，允许弹窗后再试' : err.code === 'auth/popup-closed-by-user' ? '登录窗口被关掉了' : err.code === 'auth/operation-not-allowed' ? 'Google 登录还没在 Firebase 里启用' : err.code === 'auth/unauthorized-domain' ? '这个网址还没加入 Firebase 授权网域' : '登录失败：' + err.code); }
+}
+function subscribe() {
+  if (unsub) unsub();
+  const col = db.collection('favorites');
+  // non-owners must query only public docs, otherwise the rules reject the whole query
+  unsub = (owner ? col : col.where('private', '==', false)).onSnapshot(s => {
+    favs = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => typeof f.lat === 'number' && typeof f.lng === 'number' && f.name);
+    $('#status').textContent = s.metadata.fromCache ? '离线，显示的是本机缓存' : '';
+    render();
+  }, () => { $('#status').textContent = '无法读取收藏，检查一下网络。'; });
+}
+
+/* ---------- boot: trips list, then Firebase in the background ---------- */
+fetch('trips.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+  trips = (d.trips || []).filter(t => t && t.id);
+  $('#tripSel').innerHTML = '<option value="">全部旅行</option>' + trips.map(t => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('');
+  $('#tripSel').value = F.trip; render();
+}).catch(() => {});
+render();
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+(async function start() {
+  let ok = false;
+  const fail = () => { if (!ok) { $('#status').textContent = '无法连接数据库。地图和筛选照常可用。如果你在中国大陆，可能需要开启 VPN。'; $('#stats').textContent = '收藏'; } };
+  const timer = setTimeout(fail, 10000);
+  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  try { for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
+    firebase.initializeApp(window.FIREBASE_CONFIG); }
+  catch (e) { clearTimeout(timer); fail(); return; }
+  db = firebase.firestore();
+  try { await db.enablePersistence({ synchronizeTabs: true }); } catch (e) {}   // offline cache; ignore if unsupported
+  auth = firebase.auth(); ok = true; clearTimeout(timer);
+  auth.onAuthStateChanged(u => { user = u; owner = !!u && u.uid === OWNER_UID; renderAuth(); subscribe(); render(); });
+})();
+</script>
+</body>
+</html>
