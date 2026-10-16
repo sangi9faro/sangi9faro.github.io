@@ -94,3 +94,89 @@ svg.lucide{width:20px;height:20px;stroke-width:1.75;flex-shrink:0;vertical-align
 .leaflet-control-attribution a{color:var(--ink-2)!important}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ── per-person colours (picked from the day-route palette) ── */
+:root{--m1:#E8613C;--m2:#0B7A8C;--m3:#C2397A;--m4:#7B5BC9;--tabbar-h:0px;--rail-w:0px}
+
+/* ── trip navigation (trip-nav.js): phone top bar + bottom tabs, desktop left rail ── */
+body.tn{--tabbar-h:calc(56px + var(--safe-b))}
+.tn-top{position:sticky;top:0;z-index:900;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;
+  padding:calc(8px + var(--safe-t)) 12px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.tn-top h1{font-size:17px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn-back{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 6px 0 0;font-weight:600;font-size:15px;color:var(--accent)}
+.tn-top .tn-spacer{width:96px}
+.tn-tabs{position:fixed;left:0;right:0;bottom:0;z-index:950;height:var(--tabbar-h);padding:0 6px var(--safe-b);display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--surface);border-top:1px solid var(--line)}
+.tn-tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink-2);font-size:12px;font-weight:700;border-radius:12px}
+.tn-tabs a[aria-current="page"]{color:var(--accent)}
+.tn-rail{display:none}
+@media (min-width:768px){
+  body.tn{--tabbar-h:0px;--rail-w:72px;padding-left:var(--rail-w)}
+  .tn-tabs{display:none}
+  .tn-top{grid-template-columns:minmax(0,1fr)}
+  .tn-top .tn-back,.tn-top .tn-spacer{display:none}
+  .tn-top h1{text-align:left;font-size:20px;padding:4px 12px}
+  .tn-rail{position:fixed;left:0;top:0;bottom:0;z-index:950;width:var(--rail-w);display:flex;flex-direction:column;gap:6px;padding:14px 10px;
+    background:var(--surface);border-right:1px solid var(--line)}
+  .tn-rail a{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border-radius:12px;color:var(--ink);font-weight:600;font-size:15px}
+  .tn-rail a span{display:none}
+  .tn-rail a:hover{background:var(--surface-2)}
+  .tn-rail a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .tn-rail .tn-home{color:var(--accent);margin-bottom:10px;border-bottom:1px solid var(--line);border-radius:12px 12px 0 0;padding-bottom:6px}
+  /* icon-only rail: label as a tooltip on hover/focus */
+  .tn-rail a::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;
+    background:#13202B;color:#fff;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
+  .tn-rail a:hover::after,.tn-rail a:focus-visible::after{opacity:1}
+}
+@media (min-width:1440px){
+  body.tn{--rail-w:200px}
+  .tn-rail a{justify-content:flex-start;padding:0 14px}
+  .tn-rail a span{display:inline}
+  .tn-rail a::after{display:none}
+}
+
+/* ── people avatars ── */
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--p,var(--ink-2));color:#fff;font-weight:800;font-size:15px}
+.av.sm{width:28px;height:28px;font-size:13px}
+
+/* ── flight cards (flights.js) ── */
+.fl-wrap{display:grid;gap:14px}
+.fl-switch{justify-self:start}
+.fl-cols{display:grid;gap:18px}
+.fl-col h3{font-size:15px;display:flex;align-items:center;gap:6px;margin-bottom:8px}
+/* side by side whenever the component itself is wide enough (toolbox desktop); narrow columns keep the toggle */
+.fl-wrap{container-type:inline-size}
+@container (min-width:720px){.fl-cols{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-switch{display:none!important}.fl-col[hidden]{display:block!important}}
+.fl-axis{position:relative;height:64px;margin:4px 14px 10px}
+.fl-axis::before{content:"";position:absolute;left:0;right:0;top:30px;height:2px;background:var(--line);border-radius:1px}
+.fl-dot{position:absolute;top:22px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--p);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.fl-dot.approx{background:var(--surface);box-shadow:0 0 0 2px var(--p)}
+.fl-dot span{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 11px var(--font-num);color:var(--ink-2)}
+.fl-dot .t{top:-20px}.fl-dot .n{top:18px;font-family:var(--font);font-weight:600}
+.fl-list{display:grid;gap:10px}
+.fl{container-type:inline-size;padding:14px 16px;scroll-margin:90px}
+.fl.flash{box-shadow:0 0 0 3px var(--p),var(--shadow-1)}
+.fl-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(84px,1fr) minmax(0,1fr);gap:10px;align-items:center}
+.fl-who{display:flex;align-items:center;gap:8px;min-width:0;font-weight:700}
+.fl-who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-end .tm{font:700 24px/1.1 var(--font-num)}
+.fl-end .tm sup{font-size:12px;color:var(--coral);margin-left:2px}
+.fl-end .ap{font:700 13px var(--font-num);color:var(--ink)}
+.fl-end .ct{font-size:12px;color:var(--ink-2)}
+.fl-end.arr{text-align:right}
+.fl-mid{display:grid;justify-items:center;gap:2px;font-size:12px;color:var(--ink-2);text-align:center}
+.fl-mid .ln{display:flex;align-items:center;width:100%;gap:6px;color:var(--ink-2)}
+.fl-mid .ln::before,.fl-mid .ln::after{content:"";flex:1;height:1.5px;background:var(--line)}
+.fl-mid .dur{font:700 12px var(--font-num);color:var(--ink);white-space:nowrap}
+.fl-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.fl-st{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--surface-2);color:var(--ink-2)}
+.fl-st.ticketed{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.fl-st.pending{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.fl .na{color:var(--ink-2)}
+.fl-late{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:600}
+.fl-late b{font-family:var(--font-num)}
+/* narrow cards: smaller times instead of truncating text */
+@container (max-width:360px){
+  .fl-end .tm{font-size:20px}
+  .fl-in{grid-template-columns:minmax(0,1fr) minmax(64px,.8fr) minmax(0,1fr);gap:6px}
+}
