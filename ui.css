@@ -105,15 +105,35 @@ body.tn{--tabbar-h:calc(56px + var(--safe-b))}
 .tn-top h1{font-size:17px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tn-back{display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 6px 0 0;font-weight:600;font-size:15px;color:var(--accent)}
 .tn-top .tn-spacer{width:96px}
+/* 我是谁: one avatar button for the whole site, menu with the four members + 修改成员名字 */
+.tn-me{justify-self:end;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 4px 0 8px;border:0;background:none;color:var(--ink);font-size:14px;font-weight:700;cursor:pointer;border-radius:12px}
+.tn-me[hidden]{display:none}
+.tn-top:has(.tn-me:not([hidden])) .tn-spacer{display:none}
+.tn-me{min-width:96px;justify-content:flex-end}
+.tn-me .av{width:32px;height:32px;font-size:14px}
+.tn-me .av.none{background:var(--surface-2);color:var(--ink-2)}
+.tn-me .av.none svg{width:18px;height:18px}
+.tn-me .nm{max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tn-menu{position:fixed;z-index:2200;top:calc(var(--tn-top-h,56px) + 6px);right:12px;width:min(280px,calc(100vw - 24px));padding:8px;border-radius:var(--r-l);
+  background:var(--surface);box-shadow:var(--shadow-2);border:1px solid var(--line);display:grid;gap:2px}
+.tn-menu[hidden]{display:none}
+.tn-menu p{margin:4px 8px 6px;font-size:13px;color:var(--ink-2)}
+.tn-menu button{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 10px;border:0;border-radius:12px;background:none;color:var(--ink);font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+.tn-menu button:hover,.tn-menu button[aria-checked="true"]{background:var(--surface-2)}
+.tn-menu button .ck{margin-left:auto;color:var(--accent)}
+.tn-menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.tn-menu .tn-edit{color:var(--accent);font-size:14px}
 .tn-tabs{position:fixed;left:0;right:0;bottom:0;z-index:950;height:var(--tabbar-h);padding:0 6px var(--safe-b);display:grid;grid-template-columns:repeat(4,1fr);
   background:var(--surface);border-top:1px solid var(--line)}
 .tn-tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink-2);font-size:12px;font-weight:700;border-radius:12px}
 .tn-tabs a[aria-current="page"]{color:var(--accent)}
 .tn-rail{display:none}
 @media (min-width:768px){
-  body.tn{--tabbar-h:0px;--rail-w:72px;padding-left:var(--rail-w)}
+  body.tn{--tabbar-h:0px;--rail-w:72px;padding-left:var(--rail-w);
+    /* the rail is fixed; this strip keeps its colour down the whole page (also in full-page screenshots) */
+    background-image:linear-gradient(to right,var(--surface) calc(var(--rail-w) - 1px),var(--line) calc(var(--rail-w) - 1px),var(--line) var(--rail-w),transparent var(--rail-w))}
   .tn-tabs{display:none}
-  .tn-top{grid-template-columns:minmax(0,1fr)}
+  .tn-top{grid-template-columns:minmax(0,1fr) auto}
   .tn-top .tn-back,.tn-top .tn-spacer{display:none}
   .tn-top h1{text-align:left;font-size:20px;padding:4px 12px}
   .tn-rail{position:fixed;left:0;top:0;bottom:0;z-index:950;width:var(--rail-w);display:flex;flex-direction:column;gap:6px;padding:14px 10px;
@@ -175,6 +195,7 @@ body.tn{--tabbar-h:calc(56px + var(--safe-b))}
 .fl .na{color:var(--ink-2)}
 .fl-late{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:600}
 .fl-late b{font-family:var(--font-num)}
+.fl-tbd{display:none}   /* desktop toolbox shows 「航班还没定」 instead of the dashes */
 /* narrow cards: smaller times instead of truncating text */
 @container (max-width:360px){
   .fl-end .tm{font-size:20px}
