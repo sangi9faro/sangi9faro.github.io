@@ -1,0 +1,11 @@
+# 收藏页需要的 firestore.rules 改动（由负责 vietnam-trip 仓库的窗口合并并发布）
+
+## 改动 1（2026-10-17）：填入 OWNER_UID
+在 firestore.rules 的 isOwner() 里，把占位符 'OWNER_UID' 换成：
+
+    function isOwner() {
+      return request.auth != null && request.auth.uid == 'X8BxRGYdemf6Wwb9MtQcLAxpy5q2';
+    }
+
+（这是 Faro 的 Google 账号 uid，不是密钥，可以公开。favorites.html 里的 OWNER_UID 已经同步改好。）
+合并后发布：firebase deploy --only firestore:rules --project vietnam-trip-10761
