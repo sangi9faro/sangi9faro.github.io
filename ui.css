@@ -1,0 +1,96 @@
+/* ui.css — shared design system for sangi9faro.github.io and vietnam-trip.
+   改的时候两边同步：两个仓库里的这个文件必须完全一样。 */
+
+/* ── tokens: "海边清晨" ── */
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF1F4;
+  --ink:#13202B; --ink-2:#4A5966; --line:#DCE3E9;
+  --accent:#0B7A8C; --accent-soft:#DDF0F2; --coral:#E8613C; --star:#F2A516;
+  --good:#2E8B57; --warn:#C98A0B; --bad:#C8442E;
+  --shadow-1:0 1px 2px rgba(19,32,43,.06),0 1px 3px rgba(19,32,43,.08);
+  --shadow-2:0 8px 28px rgba(19,32,43,.14);
+  --r-s:10px; --r-m:16px; --r-l:24px;
+  /* route colour per day (map lines, day tabs, timeline dots) */
+  --d1:#E8613C; --d2:#2E8B57; --d3:#C2397A; --d4:#0B7A8C; --d5:#7B5BC9; --d6:#3A6FD8;
+  --font:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --font-num:"Manrope","PingFang SC","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1419; --surface:#161E25; --surface-2:#1E2830; --ink:#E8EEF2; --ink-2:#9AA9B5;
+  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --coral:#FF8A65; --star:#FFC247;
+  --shadow-1:none; --shadow-2:0 8px 28px rgba(0,0,0,.5); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1419; --surface:#161E25; --surface-2:#1E2830; --ink:#E8EEF2; --ink-2:#9AA9B5;
+  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --coral:#FF8A65; --star:#FFC247;
+  --shadow-1:none; --shadow-2:0 8px 28px rgba(0,0,0,.5); color-scheme:dark }
+
+/* ── base ── */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+@media (min-width:1200px){body{font-size:16px}}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+a{color:var(--accent);text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.muted{color:var(--ink-2)}
+svg.lucide{width:20px;height:20px;stroke-width:1.75;flex-shrink:0;vertical-align:middle}
+.i18 svg.lucide,svg.lucide.i18{width:18px;height:18px}
+.i24 svg.lucide,svg.lucide.i24{width:24px;height:24px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:0;
+  background:var(--surface-2);color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;transition:transform .12s,background .15s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:active{background:var(--coral)}
+.btn-danger{color:var(--bad)}
+.btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
+.btn-icon{width:44px;padding:0}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ── chips: filters and day tabs ── */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;border:0;
+  background:var(--surface-2);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on,.chip[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.chip.day.on,.chip.day[aria-selected="true"]{background:var(--c,var(--ink));color:#fff}
+
+/* ── card, stars, toast, skeleton, empty ── */
+.card{background:var(--surface);border-radius:var(--r-m);box-shadow:var(--shadow-1)}
+.stars{color:var(--star);letter-spacing:1px;white-space:nowrap}
+.stars .off{color:var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-b));transform:translate(-50%,16px);opacity:0;z-index:3000;
+  background:#13202B;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;max-width:92vw;text-align:center;
+  pointer-events:none;transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sk{background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sk 1.2s linear infinite;border-radius:var(--r-m)}
+@keyframes sk{to{background-position:-200% 0}}
+.empty{display:grid;justify-items:center;gap:10px;text-align:center;padding:28px 16px;color:var(--ink-2)}
+.empty svg.lucide{width:32px;height:32px;color:var(--ink-2)}
+
+/* ── maps: calm base map via filters (CARTO now needs an API key), markers, controls ── */
+.tiles{filter:saturate(.25) brightness(1.04) contrast(.9)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tiles{filter:invert(1) hue-rotate(180deg) saturate(.3) brightness(.85) contrast(.9)}}
+:root[data-theme="dark"] .tiles{filter:invert(1) hue-rotate(180deg) saturate(.3) brightness(.85) contrast(.9)}
+.leaflet-container{background:var(--surface-2);font-family:var(--font)}
+.mk{position:relative;width:32px;height:32px;border-radius:50%;background:var(--c);border:2.5px solid #fff;color:#fff;
+  display:grid;place-items:center;box-shadow:0 2px 6px rgba(19,32,43,.3);transition:transform .15s}
+.mk svg.lucide{width:16px;height:16px;stroke-width:2}
+.mk b{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#fff;color:#13202B;
+  font:700 11px/18px var(--font-num);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mk.alt{opacity:.55}
+.mk.on{transform:scale(1.25);box-shadow:0 6px 16px rgba(19,32,43,.4);z-index:1000}
+.leaflet-bar{border:0!important;box-shadow:var(--shadow-2)!important;border-radius:12px!important;overflow:hidden}
+.leaflet-bar a{width:40px!important;height:40px!important;line-height:40px!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-2)}
+.leaflet-popup-content{font-family:var(--font);margin:12px 14px}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 80%,transparent)!important;color:var(--ink-2)!important}
+.leaflet-control-attribution a{color:var(--ink-2)!important}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
