@@ -1,0 +1,98 @@
+{
+  "owner": "Faro",
+  "trips": [
+    {
+      "id": "vietnam-2026",
+      "title": "越南跨年",
+      "start": "2026-12-29",
+      "end": "2027-01-03",
+      "country": "越南",
+      "countryCode": "VN",
+      "route": ["胡志明", "芽庄", "金兰湾"],
+      "places": [
+        { "name": "胡志明", "lat": 10.7769, "lng": 106.7009 },
+        { "name": "芽庄", "lat": 12.2388, "lng": 109.1967 },
+        { "name": "金兰湾", "lat": 12.05, "lng": 109.208 }
+      ],
+      "members": 4,
+      "cover": "img/vietnam-2026.jpg",
+      "color": "#ff2d55",
+      "summary": "四个人，胡志明集合，芽庄跨年，金兰湾度假村收尾。",
+      "site": {
+        "home": "/vietnam-trip/",
+        "guide": "/vietnam-trip/guide.html",
+        "vote": "/vietnam-trip/vote.html"
+      },
+      "days": null,
+      "notes": null,
+      "links": []
+    },
+    {
+      "id": "taipei-2026",
+      "title": "台北圣诞行",
+      "start": "2026-12-25",
+      "end": "2026-12-29",
+      "country": "台湾",
+      "countryCode": "TW",
+      "route": ["台北", "九份", "十分"],
+      "places": [
+        { "name": "台北", "lat": 25.0478, "lng": 121.5170 },
+        { "name": "十分", "lat": 25.0426, "lng": 121.7766 },
+        { "name": "九份", "lat": 25.1086, "lng": 121.8444 }
+      ],
+      "members": null,
+      "cover": "img/taipei-2026.jpg",
+      "color": "#0071e3",
+      "summary": "圣诞节在台北：101、象山日落、北投泡汤、十分放天灯、九份老街，然后飞胡志明接越南跨年。",
+      "site": {
+        "home": null,
+        "guide": "/taipei/",
+        "vote": null
+      },
+      "days": null,
+      "notes": null,
+      "links": []
+    },
+    {
+      "id": "example-past",
+      "title": "示例：过去的旅行",
+      "start": "2025-05-01",
+      "end": "2025-05-03",
+      "country": "示例",
+      "countryCode": "XX",
+      "route": ["示例城市 A", "示例城市 B"],
+      "places": [
+        { "name": "示例城市 A", "lat": 33.4996, "lng": 126.5312 },
+        { "name": "示例城市 B", "lat": 33.2541, "lng": 126.5600 }
+      ],
+      "members": 2,
+      "cover": null,
+      "color": "#34c759",
+      "summary": "这是一条示例，用来测试详情页。换成你自己的旅行时，把这一整条替换掉。",
+      "site": null,
+      "days": [
+        {
+          "label": "D1",
+          "date": "5/1",
+          "title": "示例第一天",
+          "locations": [
+            { "name": "示例景点 1", "lat": 33.5104, "lng": 126.4914, "type": "spot", "time": "10:00", "desc": "地点、时间、说明都可以随便改。" },
+            { "name": "示例餐厅", "lat": 33.4996, "lng": 126.5312, "type": "food", "time": "12:30", "desc": "type 可以是 spot / food / drink / hotel / transport。" }
+          ]
+        },
+        {
+          "label": "D2",
+          "date": "5/2",
+          "title": "示例第二天",
+          "locations": [
+            { "name": "示例景点 2", "lat": 33.2541, "lng": 126.5600, "type": "spot", "time": "09:30", "desc": "time 写「—」表示备选。" }
+          ]
+        }
+      ],
+      "notes": "这里写游记。可以写好几段，空一行就是新的一段。\n\n这是第二段示例文字。",
+      "links": [
+        { "title": "示例链接（换成相册或小红书笔记）", "url": "https://example.com/" }
+      ]
+    }
+  ]
+}

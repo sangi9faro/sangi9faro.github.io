@@ -4,213 +4,136 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>巧思的旅行集</title>
+<title>Faro 的旅行</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="旅行集">
+<meta name="apple-mobile-web-app-title" content="旅行">
 <meta name="theme-color" content="#f5f5f7">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
+/* Same visual language as the guide pages (Apple-style tokens) */
 :root{
-  --bg:#f5f5f7; --surface:#fff; --ink:#1d1d1f; --muted:#6e6e73; --line:rgba(60,60,67,.12); --accent:#0071e3; --green:#34c759;
-  --shadow:0 2px 10px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); --shadow-lg:0 12px 32px rgba(0,0,0,.12);
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --bg:#f5f5f7; --surface:#fff; --grouped:#f2f2f7; --ink:#1d1d1f; --muted:#86868b; --line:rgba(60,60,67,.12); --accent:#0071e3;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); --shadow-md:0 4px 14px rgba(0,0,0,.08);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#1c1c1e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-lg:none;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-lg:none;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-md:none;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-md:none;color-scheme:dark}
 *{box-sizing:border-box}
-[hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit;cursor:pointer}
-.wrap{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 20px calc(120px + env(safe-area-inset-bottom,0px))}
-/* top bar */
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
-.logo img{width:36px;height:36px;border-radius:10px}
-.me{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#ff9f0a,#ff2d55);border:0}
-/* next-trip card */
-.next{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:14px;align-items:center;background:var(--surface);border-radius:24px;padding:18px 18px 18px 22px;box-shadow:var(--shadow);margin-bottom:30px}
-.next .k{font-size:13px;color:var(--muted)}
-.next .t{font-size:19px;font-weight:700;margin:2px 0 2px;line-height:1.3}
-.next .cd{font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:4px;font-variant-numeric:tabular-nums}
-.next .cd small{font-size:15px;font-weight:600;color:var(--muted);margin-left:4px}
-.next .go{font-size:14px;font-weight:600;color:var(--accent)}
-.next img{width:96px;height:96px;border-radius:18px;object-fit:cover}
-/* section head */
-.sh{display:flex;align-items:center;justify-content:space-between;margin:0 2px 14px}
-.sh h2{margin:0;font-size:24px;letter-spacing:-0.02em}
-.filter{border:0;background:none;font-weight:600;font-size:15px;display:flex;gap:6px;align-items:center}
-.chips{display:flex;gap:8px;margin:-4px 0 16px;overflow-x:auto}
-.chip{border:0;border-radius:980px;padding:6px 14px;background:var(--surface);color:var(--muted);font-size:14px;font-weight:600;box-shadow:var(--shadow);white-space:nowrap}
-.chip.on{background:var(--ink);color:var(--bg)}
-/* trip cards */
-.trips{display:grid;gap:22px}
-.trip{display:block;border-radius:28px;overflow:hidden;box-shadow:var(--shadow-lg);background:var(--tint);transition:transform .15s}
-.trip:active{transform:scale(.985)}
-.cover{position:relative;height:200px;background-size:cover;background-position:var(--pos,center)}
-.pill{position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:#1d1d1f;border-radius:980px;padding:5px 12px;font-size:13px;font-weight:600}
-.pill i{width:7px;height:7px;border-radius:50%;background:var(--green)}
-.pill.past i{background:#aeaeb2} .pill.now i{background:#ff9500}
-.body{padding:20px 24px 22px}
-.body h3{margin:0 0 10px;font-size:26px;letter-spacing:-0.02em;color:#1d1d1f}
-.meta{border-left:2px solid rgba(0,0,0,.12);padding-left:12px;display:grid;gap:2px;color:#6e6e73;font-size:15px;font-variant-numeric:tabular-nums}
-.who{display:flex;margin-top:16px}
-.who span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;border:2.5px solid var(--tint);margin-left:-8px}
-.who span:first-child{margin-left:0}
-.acts{display:flex;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.55);padding:12px 18px}
-.acts a{font-size:14px;font-weight:600;color:#1d1d1f;background:#fff;border-radius:980px;padding:7px 14px}
-/* bottom nav (floating pill) */
-.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;gap:4px;background:color-mix(in srgb,var(--surface) 88%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-radius:980px;padding:6px;box-shadow:var(--shadow-lg);z-index:1000}
-.nav button{border:0;background:none;border-radius:980px;padding:11px 26px;white-space:nowrap;font-size:16px;font-weight:700;color:var(--muted)}
-.nav button.on{color:var(--ink);background:var(--bg)}
-/* footprint */
-#fmap{height:62vh;border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
-.legend{display:flex;gap:14px;flex-wrap:wrap;margin:14px 4px;font-size:14px;color:var(--muted)}
-.legend button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:980px;padding:6px 12px;font-size:14px;font-weight:600;color:var(--ink)}
-.legend button.on{background:var(--ink);color:var(--bg)}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
-/* me */
-.card{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
-.prof{display:flex;align-items:center;gap:14px}
-.prof .me{width:56px;height:56px;font-size:22px}
-.prof b{font-size:20px}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
-.stat{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:16px}
-.stat b{display:block;font-size:30px;letter-spacing:-0.02em}
-.stat span{color:var(--muted);font-size:13px}
-.card h3{margin:0 0 8px;font-size:16px}
-.card p{margin:4px 0;color:var(--muted);font-size:14px}
-.credit{font-size:11.5px;color:var(--muted);text-align:center;margin-top:18px}
+.wrap{max-width:680px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em}
+.stats{margin:4px 0 18px;color:var(--muted);font-size:15px}
+.section{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:26px 2px 10px}
+#map{height:300px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--grouped)}
+.pop a{color:var(--accent);font-weight:600}
+/* upcoming: big cards */
+.big{display:block;background:var(--surface);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:16px}
+.cover{position:relative;height:180px;background:var(--grouped) center/cover no-repeat}
+.cover .nocover{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:28px;font-weight:700}
+.pill{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);color:#1d1d1f;border-radius:980px;padding:4px 11px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.pill i{width:7px;height:7px;border-radius:50%;background:#34c759}.pill.now i{background:#ff9500}
+.cd{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:12px;padding:6px 12px;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.big .body{padding:14px 16px 4px}
+.big h2{margin:0 0 4px;font-size:22px;letter-spacing:-0.02em}
+.meta{color:var(--muted);font-size:14px;display:grid;gap:2px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 16px}
+.acts a{background:var(--grouped);color:var(--accent);border-radius:980px;padding:6px 14px;font-size:14px;font-weight:600}
+/* records: small cards */
+.year{font-size:20px;font-weight:700;margin:18px 2px 8px}
+.small{display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:center;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:10px;margin-bottom:10px}
+.small .thumb{height:70px;border-radius:12px;background:var(--grouped) center/cover no-repeat;display:grid;place-items:center;color:#fff;font-weight:700}
+.small h3{margin:0 0 2px;font-size:16px}
+.empty{color:var(--muted);font-size:14px;background:var(--surface);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.err{color:#d70015}
+.credit{margin-top:28px;font-size:11.5px;color:var(--muted);text-align:center}
 .credit a{text-decoration:underline}
 </style>
 </head>
 <body>
 <main class="wrap">
-  <header class="top">
-    <div class="logo"><img src="icon-192.png" alt=""><span>旅行集</span></div>
-    <button class="me" data-view="me" aria-label="我的">杨</button>
-  </header>
+  <h1 id="title">我的旅行</h1>
+  <div class="stats" id="stats">加载中…</div>
 
-  <!-- 计划 -->
-  <section id="v-plan">
-    <a class="next" id="nextCard"></a>
-    <div class="sh"><h2>我的计划</h2><button class="filter" id="filterBtn" aria-expanded="false">⇅ <span id="filterLabel">全部</span></button></div>
-    <div class="chips" id="chips" hidden></div>
-    <div class="trips" id="trips"></div>
-  </section>
+  <div id="map" role="region" aria-label="足迹地图"></div>
 
-  <!-- 足迹 -->
-  <section id="v-map" hidden>
-    <div class="sh"><h2>足迹</h2></div>
-    <div id="fmap"></div>
-    <div class="legend" id="legend"></div>
-  </section>
+  <div class="section">即将出发</div>
+  <div id="upcoming"></div>
 
-  <!-- 我的 -->
-  <section id="v-me" hidden>
-    <div class="card prof"><span class="me">杨</span><div><b>杨巧思</b><div style="color:var(--muted);font-size:14px">自己的旅行集</div></div></div>
-    <div class="stats" id="stats"></div>
-    <div class="card"><h3>装到手机桌面，像 App 一样用</h3>
-      <p>iPhone：用 Safari 打开 → 点底部「分享」→「添加到主屏幕」。</p>
-      <p>安卓：Chrome 右上角「⋮」→「添加到主屏幕」。</p></div>
-    <div class="card"><h3>加新旅行</h3><p>把行程、机票、酒店截图发给 Claude Code，它会加一张新卡片和对应的攻略页。</p></div>
-    <p class="credit">封面照片：台北 chsyang（公有领域）· 芽庄 Minh Duc Ly（公有领域），来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a> · 地图 © OpenStreetMap</p>
-  </section>
+  <div class="section">旅行记录</div>
+  <div id="records"></div>
+
+  <p class="credit">封面：台北 chsyang（公有领域）· 芽庄 Minh Duc Ly（公有领域），来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a> · 地图 © OpenStreetMap<br>
+  iPhone 用 Safari「分享 → 添加到主屏幕」，可以像 App 一样打开。</p>
 </main>
-
-<nav class="nav" aria-label="导航">
-  <button data-view="plan" class="on">计划</button>
-  <button data-view="map">足迹</button>
-  <button data-view="me">我的</button>
-</nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const PLACES = { taipei: [{"n": "西门町附近", "lat": 25.04347, "lng": 121.50719}, {"n": "新北欢乐耶诞城", "lat": 25.0125, "lng": 121.46545}, {"n": "中正纪念堂", "lat": 25.03458, "lng": 121.52178}, {"n": "永康街 · 午饭", "lat": 25.03246, "lng": 121.52973}, {"n": "台北 101 观景台", "lat": 25.03384, "lng": 121.5645}, {"n": "象山步道 · 看日落", "lat": 25.03162, "lng": 121.57764}, {"n": "信义区圣诞灯", "lat": 25.03659, "lng": 121.56724}, {"n": "饶河夜市", "lat": 25.0509, "lng": 121.5774}, {"n": "北投图书馆", "lat": 25.13642, "lng": 121.50625}, {"n": "地热谷", "lat": 25.13805, "lng": 121.51181}, {"n": "淡水老街", "lat": 25.16962, "lng": 121.44098}, {"n": "渔人码头 · 情人桥看日落", "lat": 25.18203, "lng": 121.41872}, {"n": "士林夜市", "lat": 25.08839, "lng": 121.5243}, {"n": "十分老街 · 放天灯", "lat": 25.04261, "lng": 121.77662}, {"n": "十分瀑布", "lat": 25.04895, "lng": 121.78731}, {"n": "九份老街", "lat": 25.10862, "lng": 121.84443}, {"n": "故宫博物院", "lat": 25.10157, "lng": 121.54886}, {"n": "迪化街", "lat": 25.0558, "lng": 121.5099}, {"n": "龙山寺", "lat": 25.03528, "lng": 121.49958}, {"n": "剥皮寮历史街区", "lat": 25.03685, "lng": 121.50227}], vietnam: [{"n": "M Village 快捷酒店", "lat": 10.78246, "lng": 106.69186}, {"n": "范五老 · 裴援步行街", "lat": 10.76683, "lng": 106.69267}, {"n": "Phở Hòa Pasteur 河粉", "lat": 10.7868, "lng": 106.68905}, {"n": "西贡中央邮局 · 红教堂", "lat": 10.77996, "lng": 106.69999}, {"n": "战争遗迹博物馆", "lat": 10.77936, "lng": 106.69228}, {"n": "滨城市场", "lat": 10.77253, "lng": 106.69804}, {"n": "Bánh Mì Huỳnh Hoa 法棍", "lat": 10.77139, "lng": 106.69272}, {"n": "阮惠步行街", "lat": 10.77372, "lng": 106.70405}, {"n": "Chill Skybar", "lat": 10.77052, "lng": 106.69439}, {"n": "芽庄凯悦", "lat": 12.24099, "lng": 109.19563}, {"n": "芽庄夜市 · 晚饭", "lat": 12.23965, "lng": 109.19579}, {"n": "4月2日广场跨年倒数", "lat": 12.238, "lng": 109.1967}, {"n": "蹈港出发 · 跳岛游", "lat": 12.2085, "lng": 109.2163}, {"n": "打车去金兰湾 Fusion", "lat": 12.05001, "lng": 109.20828}, {"n": "塔巴温泉泥浆浴", "lat": 12.2716, "lng": 109.1748}, {"n": "婆那加占婆塔", "lat": 12.26539, "lng": 109.19518}] };
-// One entry per trip. To add a trip: add an object here (+ its places) and a guide page.
-const TRIPS = [
-  { id: "taipei", title: "台北圣诞行", start: "2026-12-25", end: "2026-12-29", tz: "+08:00", cover: "img/taipei-cover.jpg", pos: "50% 60%",
-    tint: "#e4efff", color: "#0071e3", cities: ["台北", "新北"], who: [["杨", "#ff2d55"]], href: "taipei/",
-    acts: [["攻略", "taipei/"]] },
-  { id: "vietnam", title: "越南跨年", start: "2026-12-29", end: "2027-01-04", tz: "+07:00", cover: "img/vietnam-cover.jpg", pos: "40% 55%",
-    tint: "#fdebd7", color: "#ff9500", cities: ["胡志明", "芽庄", "金兰湾"], who: [["杨", "#ff2d55"], ["钟", "#0071e3"], ["陈", "#34c759"], ["王", "#af52de"]], href: "vietnam-trip/",
-    acts: [["工具箱 · 记账", "vietnam-trip/"], ["攻略", "vietnam-trip/guide.html"], ["投票", "vietnam-trip/vote.html"]] },
-];
 const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const DAY = 86400000;
-const t0 = t => new Date(t.start + "T00:00:00" + t.tz).getTime();
-const t1 = t => new Date(t.end + "T23:59:59" + t.tz).getTime();
-const nights = t => Math.round((new Date(t.end) - new Date(t.start)) / DAY);
-const status = t => { const n = Date.now(); return n < t0(t) ? "todo" : n > t1(t) ? "past" : "now"; };
-const LABEL = { todo: "待出行", now: "进行中", past: "已结束" };
-const md = s => s.slice(5).replace("-", ".");
-let filter = "all";
+// ?today=2027-01-01 lets you preview how the page looks on another date
+const TODAY = (() => { const q = new URLSearchParams(location.search).get('today'); const d = q ? new Date(q + 'T12:00:00') : new Date(); return isNaN(d) ? new Date() : d; })();
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = ymd(TODAY);
+const days = t => Math.round((new Date(t.end) - new Date(t.start)) / DAY) + 1;
+const status = t => today < t.start ? 'planned' : today > t.end ? 'done' : 'now';
+const md = s => `${+s.slice(5, 7)}/${+s.slice(8)}`;
+const range = t => `${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)} · ${days(t)} 天`;
+const target = t => (t.site && (t.site.guide || t.site.home)) || `trip.html?id=${encodeURIComponent(t.id)}`;
+const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0071e3';
+const coverStyle = t => t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:linear-gradient(135deg,${color(t.color)},#5ac8fa)`;
 
-function renderNext() {
-  const up = TRIPS.filter(t => status(t) !== "past").sort((a, b) => t0(a) - t0(b))[0], el = $("#nextCard");
-  if (!up) { el.hidden = true; return; }
-  const n = Date.now(), d = Math.ceil((t0(up) - n) / DAY);
-  el.href = up.href;
-  el.innerHTML = `<div><div class="k">${status(up) === "now" ? "正在进行" : "下一趟"} · ${up.cities[0]}</div>
-    <div class="t">${up.title}</div><div class="cd">${status(up) === "now" ? "进行中 🎉" : `${d}<small>天后出发</small>`}</div><div class="go">打开攻略 ›</div></div>
-    <img src="${up.cover}" alt="">`;
-}
-function renderTrips() {
-  const list = TRIPS.filter(t => filter === "all" || status(t) === filter).sort((a, b) => t0(a) - t0(b));
-  $("#trips").innerHTML = list.length ? list.map(t => {
-    const st = status(t);
-    return `<div class="trip" style="--tint:${t.tint}">
-      <a href="${t.href}"><div class="cover" style="background-image:url(${t.cover});--pos:${t.pos}">
-        <span class="pill ${st}"><i></i>${LABEL[st]}</span></div>
-      <div class="body"><h3>${t.title}</h3>
-        <div class="meta"><span>${md(t.start)} 至 ${md(t.end)} · ${nights(t) + 1}天${nights(t)}晚</span><span>${(PLACES[t.id] || []).length} 个地点 · ${t.cities.join("、")}</span></div>
-        <div class="who">${t.who.map(([c, col]) => `<span style="background:${col}">${c}</span>`).join("")}</div></div></a>
-      <div class="acts">${t.acts.map(([l, h]) => `<a href="${h}">${l} ›</a>`).join("")}</div></div>`;
-  }).join("") : `<p style="color:var(--muted);text-align:center">没有这类旅行。</p>`;
-}
-$("#filterBtn").addEventListener("click", () => { const c = $("#chips"); c.hidden = !c.hidden; $("#filterBtn").setAttribute("aria-expanded", String(!c.hidden)); });
-function renderChips() {
-  const F = [["all", "全部"], ["todo", "待出行"], ["now", "进行中"], ["past", "已结束"]];
-  $("#chips").innerHTML = F.map(([k, l]) => `<button class="chip ${k === filter ? "on" : ""}" data-f="${k}">${l}</button>`).join("");
-  $("#filterLabel").textContent = F.find(f => f[0] === filter)[1];
-}
-$("#chips").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if (!b) return; filter = b.dataset.f; renderChips(); renderTrips(); });
+function render(data) {
+  const trips = (data.trips || []).filter(t => t && t.id && t.start && t.end);
+  $('#title').textContent = `${data.owner || '我'} 的旅行`; document.title = $('#title').textContent;
 
-// 足迹 map: all places, coloured per trip
-let map = null;
-function renderMap() {
-  if (map) { map.invalidateSize(); return; }
-  if (!window.L) { $("#fmap").innerHTML = '<p style="padding:20px;color:var(--muted)">地图加载失败，检查一下网络。</p>'; return; }
-  map = L.map("fmap", { zoomControl: false }); L.control.zoom({ position: "topright" }).addTo(map);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  // stats from finished + ongoing trips
+  const counted = trips.filter(t => status(t) !== 'planned');
+  const countries = new Set(counted.map(t => t.countryCode || t.country)), cities = new Set(counted.flatMap(t => t.route || []));
+  const dates = new Set(); counted.forEach(t => { for (let d = new Date(t.start + 'T12:00:00'); ymd(d) <= t.end; d = new Date(+d + DAY)) dates.add(ymd(d)); });
+  $('#stats').textContent = `去过 ${countries.size} 个国家/地区 · ${cities.size} 个城市 · 共 ${dates.size} 天`;
+
+  // upcoming (planned + ongoing), soonest first
+  const up = trips.filter(t => status(t) !== 'done').sort((a, b) => a.start.localeCompare(b.start));
+  $('#upcoming').innerHTML = up.length ? up.map(t => {
+    const st = status(t), n = Math.round((new Date(t.start + 'T00:00:00') - new Date(today + 'T00:00:00')) / DAY);
+    const cd = st === 'now' ? `第 ${Math.round((new Date(today) - new Date(t.start)) / DAY) + 1} 天` : `还有 ${n} 天`;
+    const site = t.site || {}, acts = [['攻略', site.guide], ['工具箱', site.home], ['投票', site.vote]].filter(a => a[1]);
+    return `<div class="big"><a href="${esc(target(t))}">
+      <div class="cover" style="${coverStyle(t)}">${t.cover ? '' : `<span class="nocover">${esc(t.title)}</span>`}
+        <span class="pill ${st}"><i></i>${st === 'now' ? '进行中' : '计划中'}</span><span class="cd">${cd}</span></div>
+      <div class="body"><h2>${esc(t.title)}</h2><div class="meta"><span>${range(t)}${t.members ? ` · ${t.members} 人` : ''}</span><span>${(t.route || []).map(esc).join(' → ')}</span></div></div></a>
+      ${acts.length ? `<div class="acts">${acts.map(([l, h]) => `<a href="${esc(h)}">${l} ›</a>`).join('')}</div>` : '<div style="height:12px"></div>'}</div>`;
+  }).join('') : `<div class="empty">暂时没有计划中的旅行。</div>`;
+
+  // records grouped by the year the trip ended, newest first
+  const done = trips.filter(t => status(t) === 'done').sort((a, b) => b.end.localeCompare(a.end));
+  if (!done.length) $('#records').innerHTML = `<div class="empty">还没有记录。在 trips.json 里加一条就会出现在这里。</div>`;
+  else { let h = '', yr = '';
+    done.forEach(t => { const y = t.end.slice(0, 4); if (y !== yr) { yr = y; h += `<div class="year">${y}</div>`; }
+      h += `<a class="small" href="${esc(target(t))}"><div class="thumb" style="${coverStyle(t)}">${t.cover ? '' : esc((t.title || '').slice(0, 2))}</div>
+        <div><h3>${esc(t.title)}</h3><div class="meta"><span>${range(t)}</span><span>${esc(t.country || '')}${t.members ? ` · ${t.members} 人` : ''}</span></div></div></a>`; });
+    $('#records').innerHTML = h; }
+
+  // footprint map
+  if (!window.L) { $('#map').innerHTML = '<p style="padding:16px;color:var(--muted)">地图加载失败，检查一下网络。</p>'; return; }
+  const map = L.map('map', { zoomControl: false, scrollWheelZoom: false }); L.control.zoom({ position: 'topright' }).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
   const pts = [];
-  TRIPS.forEach(t => (PLACES[t.id] || []).forEach(p => { pts.push([p.lat, p.lng]);
-    L.circleMarker([p.lat, p.lng], { radius: 6, color: "#fff", weight: 2, fillColor: t.color, fillOpacity: .95 }).addTo(map).bindPopup(`<b>${p.n}</b><br>${t.title}`); }));
-  const zoomTo = id => { const ps = id === "all" ? pts : (PLACES[id] || []).map(p => [p.lat, p.lng]); map.fitBounds(ps, { padding: [28, 28], maxZoom: 13 });
-    document.querySelectorAll("#legend button").forEach(b => b.classList.toggle("on", b.dataset.zoom === id)); };
-  $("#legend").innerHTML = `<button data-zoom="all">全部</button>` + TRIPS.map(t => `<button data-zoom="${t.id}"><i style="background:${t.color}"></i>${t.title}</button>`).join("");
-  $("#legend").addEventListener("click", e => { const b = e.target.closest("[data-zoom]"); if (b) zoomTo(b.dataset.zoom); });
-  zoomTo("all");
+  trips.forEach(t => { const ps = (t.places || []).filter(p => typeof p.lat === 'number' && typeof p.lng === 'number'); if (!ps.length) return;
+    if (ps.length > 1) L.polyline(ps.map(p => [p.lat, p.lng]), { color: color(t.color), weight: 2, opacity: .7, dashArray: '5,6' }).addTo(map);
+    ps.forEach(p => { pts.push([p.lat, p.lng]);
+      L.circleMarker([p.lat, p.lng], { radius: 7, color: '#fff', weight: 2, fillColor: color(t.color), fillOpacity: .95 }).addTo(map)
+        .bindPopup(`<div class="pop"><b>${esc(t.title)}</b> · ${esc(p.name)}<br><a href="${esc(target(t))}">进入这次旅行 ›</a></div>`); }); });
+  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 9 }); else map.setView([20, 110], 3);
 }
-function renderStats() {
-  const days = new Set(); TRIPS.forEach(t => { for (let d = new Date(t.start); d <= new Date(t.end); d = new Date(+d + DAY)) days.add(d.toISOString().slice(0, 10)); });
-  const cities = new Set(TRIPS.flatMap(t => t.cities)), places = TRIPS.reduce((n, t) => n + (PLACES[t.id] || []).length, 0);
-  $("#stats").innerHTML = [["趟旅行", TRIPS.length], ["个城市", cities.size], ["天在路上", days.size], ["个地点", places]].map(([l, n]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
-}
-// views (bottom pill nav)
-function show(v) {
-  ["plan", "map", "me"].forEach(k => $("#v-" + k).hidden = k !== v);
-  document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.view === v));
-  if (v === "map") renderMap();
-  try { localStorage.setItem("hub-view", v); } catch (e) {}
-  window.scrollTo(0, 0);
-}
-document.addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) show(b.dataset.view); });
-renderNext(); renderChips(); renderTrips(); renderStats();
-try { const v = localStorage.getItem("hub-view"); if (v && v !== "plan") show(v); } catch (e) {}
+
+fetch('trips.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(render)
+  .catch(() => { $('#stats').innerHTML = '<span class="err">trips.json 读取失败，检查一下文件格式。</span>'; });
 </script>
 </body>
 </html>
