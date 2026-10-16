@@ -5,7 +5,7 @@
 :root{
   --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF1F4;
   --ink:#13202B; --ink-2:#4A5966; --line:#DCE3E9;
-  --accent:#0B7A8C; --accent-soft:#DDF0F2; --coral:#E8613C; --star:#F2A516;
+  --accent:#0B7A8C; --accent-soft:#DDF0F2; --on-accent:#FFFFFF; --coral:#E8613C; --star:#F2A516;
   --good:#2E8B57; --warn:#C98A0B; --bad:#C8442E;
   --shadow-1:0 1px 2px rgba(19,32,43,.06),0 1px 3px rgba(19,32,43,.08);
   --shadow-2:0 8px 28px rgba(19,32,43,.14);
@@ -19,11 +19,11 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0E1419; --surface:#161E25; --surface-2:#1E2830; --ink:#E8EEF2; --ink-2:#9AA9B5;
-  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --coral:#FF8A65; --star:#FFC247;
+  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --on-accent:#0E1419; --coral:#FF8A65; --star:#FFC247;
   --shadow-1:none; --shadow-2:0 8px 28px rgba(0,0,0,.5); color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0E1419; --surface:#161E25; --surface-2:#1E2830; --ink:#E8EEF2; --ink-2:#9AA9B5;
-  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --coral:#FF8A65; --star:#FFC247;
+  --line:#2A3540; --accent:#3CB6C7; --accent-soft:#163238; --on-accent:#0E1419; --coral:#FF8A65; --star:#FFC247;
   --shadow-1:none; --shadow-2:0 8px 28px rgba(0,0,0,.5); color-scheme:dark }
 
 /* ── base ── */
@@ -46,7 +46,7 @@ svg.lucide{width:20px;height:20px;stroke-width:1.75;flex-shrink:0;vertical-align
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:0;
   background:var(--surface-2);color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;transition:transform .12s,background .15s}
 .btn:active{transform:scale(.98)}
-.btn-primary{background:var(--accent);color:#fff}
+.btn-primary{background:var(--accent);color:var(--on-accent)}   /* text on accent: white in light, ink in dark (contrast) */
 .btn-primary:active{background:var(--coral)}
 .btn-danger{color:var(--bad)}
 .btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
