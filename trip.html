@@ -5,112 +5,215 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>旅行详情</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="ui.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
-:root{
-  --bg:#f5f5f7; --surface:#fff; --grouped:#f2f2f7; --ink:#1d1d1f; --muted:#86868b; --line:rgba(60,60,67,.12); --accent:#0071e3;
-  --red:#ff3b30; --blue:#007aff; --purple:#af52de; --orange:#ff9500; --gray:#aeaeb2;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
+/* trip.html — read-only version of the guide layout; tokens and shared components live in ui.css */
+html,body{height:100%}
+body.t{overflow:hidden}
+#map{position:fixed;inset:0;z-index:0}
+.t-top{position:fixed;left:0;right:0;top:0;z-index:700;padding:calc(10px + var(--safe-t)) 12px 6px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;pointer-events:none}
+.t-top>*{pointer-events:auto}
+.t-back{width:44px;height:44px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-2);display:grid;place-items:center;color:var(--ink)}
+.t-title{height:44px;background:var(--surface);box-shadow:var(--shadow-2);border-radius:12px;padding:0 14px;display:flex;align-items:center;min-width:0}
+.t-title b{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tabs{grid-column:1/-1;padding:2px 2px 6px}
+#tabs .chip{background:var(--surface);box-shadow:var(--shadow-1)}
+#tabs .chip.on{background:var(--c,var(--ink));color:#fff}
+.t-panel{position:fixed;left:0;right:0;bottom:0;z-index:800;height:var(--peek,170px);max-height:calc(100dvh - 60px);background:var(--bg);border-radius:var(--r-l) var(--r-l) 0 0;
+  box-shadow:var(--shadow-2);display:flex;flex-direction:column;transition:height .32s cubic-bezier(.2,.8,.2,1)}
+.t-panel.drag{transition:none}
+.g-handle{flex-shrink:0;height:30px;border:0;background:none;display:grid;place-items:center;cursor:grab;touch-action:none}
+.g-handle span{width:44px;height:5px;border-radius:3px;background:var(--line)}
+#content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(28px + var(--safe-b))}
+.t-days{display:none}
+@media (min-width:768px){
+  body.t{display:grid;grid-template-columns:minmax(360px,420px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:100dvh}
+  #map{position:relative;inset:auto;grid-column:2;grid-row:1/3;height:100dvh}
+  .t-top{position:static;grid-column:1;grid-row:1;pointer-events:auto;background:var(--bg);padding:14px 16px 6px;border-right:1px solid var(--line)}
+  .t-back,.t-title{box-shadow:none;background:var(--surface-2)}
+  #tabs .chip{box-shadow:none;background:var(--surface-2)}
+  .t-panel{position:static;grid-column:1;grid-row:2;height:auto;max-height:none;border-radius:0;box-shadow:none;transition:none;border-right:1px solid var(--line)}
+  .g-handle{display:none}
+  #content{padding:6px 18px 28px}
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
-a{color:var(--accent);text-decoration:none}
-.back{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:10px;z-index:1000;background:rgba(255,255,255,.92);color:#1d1d1f;border-radius:980px;padding:6px 12px;font-size:14px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.hero{height:220px;background:var(--grouped) center/cover no-repeat;position:relative}
-.hero .nocover{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:30px;font-weight:700;padding:0 20px;text-align:center}
-.wrap{max-width:680px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom,0px))}
-h1{margin:0 0 6px;font-size:28px;letter-spacing:-0.025em}
-.meta{color:var(--muted);font-size:14px;display:grid;gap:2px}
-.summary{margin:12px 0 0}
-.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;margin-top:14px}
-.note{background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
-.section{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:26px 2px 10px}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.tab{flex-shrink:0;border:0;border-radius:980px;padding:7px 16px;background:var(--grouped);color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
-.tab.on{background:var(--accent);color:#fff}
-#map{height:260px;border-radius:14px;overflow:hidden;margin:12px 0;box-shadow:var(--shadow)}
-.dh{margin:4px 2px 10px}.dh b{font-size:19px}.dh span{color:var(--muted);font-size:14px;margin-left:8px}
-.tl{position:relative;padding-left:22px}
-.tl::before{content:'';position:absolute;left:6px;top:14px;bottom:14px;width:1.5px;background:var(--line)}
-.item{position:relative;margin-bottom:10px}
-.dot{position:absolute;left:-20px;top:18px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 3px var(--bg)}
-.item .card{margin:0}
-.time{font-size:12px;font-weight:600;color:var(--muted)}
-.name{font-size:16px;font-weight:600;margin:2px 0}
-.desc{font-size:14px;color:var(--muted)}
+@media (min-width:1200px){
+  body.t{grid-template-columns:240px minmax(420px,480px) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+  .t-top{display:none}
+  .t-days{display:flex;flex-direction:column;gap:6px;grid-column:1;grid-row:1;overflow-y:auto;padding:18px 12px;background:var(--surface);border-right:1px solid var(--line)}
+  .t-panel{grid-column:2;grid-row:1}
+  #map{grid-column:3;grid-row:1}
+}
+.td-head{display:grid;gap:4px;padding:0 6px 12px}
+.td-head a{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:600}
+.td-head h1{font-size:20px}
+.gd{display:grid;grid-template-columns:12px minmax(0,1fr);gap:2px 10px;text-align:left;border:0;background:none;border-radius:12px;padding:10px;cursor:pointer;color:var(--ink)}
+.gd:hover{background:var(--surface-2)} .gd.on{background:var(--accent-soft)}
+.gd i.dot{width:12px;height:12px;border-radius:50%;background:var(--c);margin-top:5px}
+.gd .l{font:800 14px var(--font-num)} .gd .t{grid-column:2;font-size:13px;color:var(--ink-2)}
+/* overview */
+.cover{height:180px;border-radius:var(--r-m);background:var(--surface-2) center/cover no-repeat;margin-bottom:14px;display:grid;place-items:center;color:#fff;font-size:24px;font-weight:800}
+.ov h2{font-size:28px}
+.ov .meta{display:grid;gap:2px;margin-top:6px;color:var(--ink-2);font-size:14px}
+.ov .summary{margin:12px 0 0}
+.note{margin-top:14px;padding:12px 14px;border-radius:var(--r-m);background:var(--accent-soft);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sh{font-size:13px;font-weight:700;color:var(--ink-2);margin:22px 2px 8px}
 .notes p{margin:0 0 10px}
-.links a{display:block;padding:10px 0;border-top:1px solid var(--line);font-weight:600}
-.links a:first-child{border-top:0}
-.missing{text-align:center;padding:80px 16px}
-.fav{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);color:var(--ink)}
-.fav:first-child{border-top:0}
-.fav .st{color:#ff9f0a;white-space:nowrap}
+.lk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;color:var(--ink);font-weight:600}
+.lk+.lk{border-top:1px solid var(--line)}
+.fav{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;color:var(--ink)}
+.fav+.fav{border-top:1px solid var(--line)}
+/* timeline (read-only) */
+.day-head{padding:4px 0 12px}
+.day-chip{display:inline-block;font:800 13px var(--font-num);color:#fff;background:var(--c);border-radius:8px;padding:2px 9px;margin-bottom:6px}
+.day-head h2{font-size:20px}
+.day-head p{margin:4px 0 0;color:var(--ink-2);font-size:14px}
+.tl-item{position:relative;padding-left:40px;margin-bottom:10px}
+.tl-item::before{content:"";position:absolute;left:15px;top:34px;bottom:-14px;width:2px;background:var(--line)}
+.timeline>.tl-item:last-child::before{display:none}
+.tl-num{position:absolute;left:2px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font:800 13px var(--font-num);border:2px solid var(--bg)}
+.tl-num.alt{background:var(--surface-2);color:var(--ink-2)}
+.tl-item>.card{padding:12px 14px;cursor:pointer;transition:transform .12s,box-shadow .15s}
+.tl-item>.card:active{transform:scale(.98)}
+.tl-item.sel>.card{box-shadow:0 0 0 2px var(--c),var(--shadow-1)}
+.tl-head{display:flex;align-items:center;gap:8px}
+.tl-head .time{font:700 14px var(--font-num)}
+.type-tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-2);background:var(--surface-2);border-radius:6px;padding:1px 7px}
+.type-tag svg.lucide{width:14px;height:14px}
+.tl-item .name{font-size:17px;font-weight:700;margin:4px 0 2px}
+.tl-item .desc{font-size:14px;color:var(--ink-2)}
+.missing{max-width:420px;margin:20vh auto 0;padding:0 16px}
 </style>
 </head>
-<body>
-<a class="back" href="./">← 我的旅行</a>
-<div id="app"><p style="padding:80px 16px;text-align:center;color:var(--muted)">加载中…</p></div>
+<body class="t">
+<div id="map" role="region" aria-label="旅行地图"></div>
+<header class="t-top">
+  <a class="t-back" href="./" aria-label="返回我的旅行"><i data-lucide="chevron-left"></i></a>
+  <div class="t-title"><b id="tTitle">旅行详情</b></div>
+  <div class="chips" id="tabs" role="tablist" aria-label="分天"></div>
+</header>
+<aside class="t-days" aria-label="分天"><div class="td-head"><a href="./"><i data-lucide="chevron-left" class="i18"></i>我的旅行</a><h1 id="tTitle2">旅行详情</h1></div><div id="dayList"></div></aside>
+<section class="t-panel" id="panel" aria-label="行程">
+  <button class="g-handle" id="handle" aria-label="展开或收起"><span></span></button>
+  <div id="content"><div class="sk" style="height:180px;margin-bottom:12px"></div><div class="sk" style="height:60px"></div></div>
+</section>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = u => /^(https?:\/\/|\/)/i.test(u || '') ? u : '';
+const icons = root => { try { if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': 1.75 }, root }); } catch (e) {} };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DAY = 86400000, md = s => `${+s.slice(5, 7)}/${+s.slice(8)}`;
-const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0071e3';
-const TYPE_COLOR = { food: 'var(--red)', spot: 'var(--blue)', drink: 'var(--purple)', hotel: 'var(--orange)', transport: 'var(--gray)' };
+const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0B7A8C';
+const dayHex = n => getComputedStyle(document.documentElement).getPropertyValue('--d' + (((n - 1) % 6) + 1)).trim() || '#0B7A8C';
+const TYPE_ICON = { food: 'utensils', spot: 'camera', drink: 'wine', hotel: 'bed-double', transport: 'plane', cafe: 'coffee', shop: 'shopping-bag' };
+const TYPE_NAME = { food: '吃饭', spot: '景点', drink: '酒吧', hotel: '住宿', transport: '交通', cafe: '咖啡', shop: '购物' };
 const id = new URLSearchParams(location.search).get('id');
-const app = document.getElementById('app');
+let T = null, days = [], cur = 0, map = null, layer = null, markerBy = {}, selId = null;
 
 function notFound() {
-  document.title = '没有找到这次旅行';
-  app.innerHTML = `<div class="missing"><h1>没有找到这次旅行</h1><p class="meta">链接里的 id 不对，或者这次旅行已经从 trips.json 删掉了。</p><p><a href="./">← 回到我的旅行</a></p></div>`;
+  document.title = '没有找到这次旅行'; $('#panel').hidden = true; $('.t-top').hidden = true; $('.t-days').hidden = true; $('#map').hidden = true;
+  document.body.style.overflow = 'auto'; document.body.style.display = 'block';
+  document.body.insertAdjacentHTML('beforeend', `<div class="missing empty card"><i data-lucide="map-pin-off"></i><h1>没有找到这次旅行</h1><p>链接里的 id 不对，或者这次旅行已经从 trips.json 删掉了。</p><a class="btn btn-primary" href="./">回到我的旅行</a></div>`);
+  icons(document);
 }
-function render(t) {
-  document.title = t.title;
-  const n = Math.round((new Date(t.end) - new Date(t.start)) / DAY) + 1;
-  const site = t.site || null, siteLink = site && safeUrl(site.guide || site.home);
-  let h = `<div class="hero" style="${t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:linear-gradient(135deg,${color(t.color)},#5ac8fa)`}">${t.cover ? '' : `<span class="nocover">${esc(t.title)}</span>`}</div>
-  <div class="wrap"><h1>${esc(t.title)}</h1>
-    <div class="meta"><span>${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)} · ${n} 天${t.members ? ` · ${t.members} 人` : ''}</span><span>${(t.route || []).map(esc).join(' → ')}${t.country ? ' · ' + esc(t.country) : ''}</span></div>
-    ${t.summary ? `<p class="summary">${esc(t.summary)}</p>` : ''}
-    ${siteLink ? `<div class="card note">这次旅行有完整网站：<a href="${esc(siteLink)}">打开 ›</a></div>` : ''}`;
-  const days = Array.isArray(t.days) ? t.days.filter(d => d && Array.isArray(d.locations)) : [];
-  if (days.length) h += `<div class="section">行程</div><div class="tabs" id="tabs">${days.map((d, i) => `<button class="tab${i ? '' : ' on'}" data-i="${i}">${esc(d.label || 'D' + (i + 1))}</button>`).join('')}</div><div id="map"></div><div id="day"></div>`;
-  if (t.notes) h += `<div class="section">游记</div><div class="card notes">${String(t.notes).split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
-  const links = (t.links || []).filter(l => l && safeUrl(l.url));
-  if (links.length) h += `<div class="section">链接</div><div class="card links">${links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.title || l.url)} ›</a>`).join('')}</div>`;
-  h += `<div id="tripFavs"></div>`;
-  app.innerHTML = h + '</div>';
-  showFavs(t);
-  if (!days.length) return;
 
-  // read-only day view: tabs + map + timeline (same idea as guide.html)
-  let map = null, layer = null;
-  if (window.L) { map = L.map('map', { zoomControl: false, scrollWheelZoom: false }); L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map); layer = L.layerGroup().addTo(map); }
-  else document.getElementById('map').hidden = true;
-  function show(i) {
-    const d = days[i], locs = d.locations.filter(l => l && l.name);
-    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
-    const main = locs.filter(l => l.time !== '—'), alt = locs.filter(l => l.time === '—');
-    const item = l => `<div class="item"><span class="dot" style="background:${TYPE_COLOR[l.type] || 'var(--gray)'}"></span><div class="card"><div class="time">${l.time && l.time !== '—' ? esc(l.time) : '备选'}</div><div class="name">${esc(l.name)}</div>${l.desc ? `<div class="desc">${esc(l.desc)}</div>` : ''}</div></div>`;
-    document.getElementById('day').innerHTML = `<div class="dh"><b>${esc(d.title || '')}</b><span>${esc(d.date || '')}</span></div>
-      ${main.length ? `<div class="tl">${main.map(item).join('')}</div>` : ''}${alt.length ? `<div class="section">备选</div><div class="tl">${alt.map(item).join('')}</div>` : ''}`;
-    if (!map) return;
-    layer.clearLayers();
-    const pts = locs.filter(l => typeof l.lat === 'number' && typeof l.lng === 'number').map(l => { L.circleMarker([l.lat, l.lng], { radius: 7, color: '#fff', weight: 2, fillColor: color(t.color), fillOpacity: .95 }).addTo(layer).bindPopup(`<b>${esc(l.name)}</b>`); return [l.lat, l.lng]; });
-    if (pts.length > 1) L.polyline(pts, { color: color(t.color), weight: 2, opacity: .6, dashArray: '5,6' }).addTo(layer);
-    if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
+/* ---------- map ---------- */
+function initMap() {
+  if (!window.L) { $('#map').innerHTML = '<div class="empty">地图加载失败，检查一下网络。</div>'; return; }
+  // flyToBounds needs an initial view, otherwise Leaflet throws "Set map center and zoom first"
+  map = L.map('map', { zoomControl: false }).setView([20, 110], 3); L.control.zoom({ position: 'bottomright' }).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, className: 'tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+  layer = L.layerGroup().addTo(map);
+}
+function fitTo(pts) {
+  if (!map || !pts.length) return;
+  const phone = innerWidth < 768, opt = { paddingTopLeft: [30, phone ? $('.t-top').offsetHeight + 16 : 30], paddingBottomRight: [30, phone ? SHEET[sheetState]() + 16 : 30], maxZoom: 14 };
+  reduceMotion ? map.fitBounds(pts, opt) : map.flyToBounds(pts, { ...opt, duration: .6 });
+}
+function drawMap() {
+  if (!map) return; layer.clearLayers(); markerBy = {};
+  if (cur === 0) {
+    const ps = (T.places || []).filter(p => typeof p.lat === 'number'), pts = ps.map(p => [p.lat, p.lng]);
+    days.forEach((d, i) => { const ls = d.locations.filter(l => typeof l.lat === 'number' && l.time !== '—').map(l => [l.lat, l.lng]); if (ls.length > 1) L.polyline(ls, { color: dayHex(i + 1), weight: 4, opacity: .85 }).addTo(layer); ls.forEach(p => pts.push(p)); });
+    if (!days.length && pts.length > 1) L.polyline(pts, { color: color(T.color), weight: 4, opacity: .85 }).addTo(layer);
+    ps.forEach(p => L.circleMarker([p.lat, p.lng], { radius: 7, color: '#fff', weight: 2.5, fillColor: color(T.color), fillOpacity: 1 }).addTo(layer).bindPopup(`<b>${esc(p.name)}</b>`));
+    fitTo(pts); return;
   }
-  document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) show(+b.dataset.i); });
-  show(0);
+  const d = days[cur - 1], c = dayHex(cur), coords = []; let n = 0;
+  d.locations.forEach((l, k) => { if (typeof l.lat !== 'number') return; const alt = l.time === '—'; if (!alt) n++;
+    const m = L.marker([l.lat, l.lng], { icon: L.divIcon({ className: '', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
+      html: `<div class="mk${alt ? ' alt' : ''}" style="--c:${c}"><i data-lucide="${TYPE_ICON[l.type] || 'map-pin'}"></i>${alt ? '' : `<b>${n}</b>`}</div>` }) }).addTo(layer).bindPopup(`<b>${esc(l.name)}</b>`);
+    m.on('click', () => select(k, 'map')); markerBy[k] = m; if (!alt) coords.push([l.lat, l.lng]); });
+  if (coords.length > 1) L.polyline(coords, { color: c, weight: 4, opacity: .85 }).addTo(layer);
+  icons($('#map')); fitTo(coords.length ? coords : Object.values(markerBy).map(m => m.getLatLng()));
+}
+function select(k, from) {
+  selId = k; document.querySelectorAll('.tl-item').forEach(x => x.classList.toggle('sel', +x.dataset.k === k));
+  Object.entries(markerBy).forEach(([i, m]) => { const el = m.getElement(); if (el) el.firstElementChild.classList.toggle('on', +i === k); });
+  if (from === 'map') { if (innerWidth < 768 && sheetState === 'min') setSheet('half'); const el = document.querySelector(`.tl-item[data-k="${k}"]`); if (el) el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); }
+  else if (markerBy[k] && map) { const ll = markerBy[k].getLatLng(); reduceMotion ? map.setView(ll, Math.max(map.getZoom(), 15)) : map.flyTo(ll, Math.max(map.getZoom(), 15), { duration: .6 }); }
 }
 
-// public favourites (no sign-in needed: rules let anyone read non-private docs)
+/* ---------- content ---------- */
+function overview() {
+  const t = T, n = Math.round((new Date(t.end) - new Date(t.start)) / DAY) + 1, site = t.site || null, siteLink = site && safeUrl(site.guide || site.home);
+  let h = `<div class="ov"><div class="cover" style="${t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:${color(t.color)}`}">${t.cover ? '' : esc(t.title)}</div>
+    <h2>${esc(t.title)}</h2><div class="meta"><span class="num">${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)} · ${n} 天${t.members ? ` · ${t.members} 人` : ''}</span><span>${(t.route || []).map(esc).join(' → ')}${t.country ? ' · ' + esc(t.country) : ''}</span></div>
+    ${t.summary ? `<p class="summary">${esc(t.summary)}</p>` : ''}
+    ${siteLink ? `<div class="note"><span>这次旅行有完整网站</span><a class="btn btn-sm btn-primary" href="${esc(siteLink)}">打开<i data-lucide="arrow-right" class="i18"></i></a></div>` : ''}</div>`;
+  if (t.notes) h += `<div class="sh">游记</div><div class="card notes" style="padding:14px 16px">${String(t.notes).split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+  const links = (t.links || []).filter(l => l && safeUrl(l.url));
+  if (links.length) h += `<div class="sh">链接</div><div class="card">${links.map(l => `<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.title || l.url)}<i data-lucide="external-link" class="i18"></i></a>`).join('')}</div>`;
+  return h + '<div id="tripFavs"></div>';
+}
+function dayView(i) {
+  const d = days[i - 1], c = dayHex(i); let n = 0;
+  const item = (l, k) => { const alt = l.time === '—'; if (!alt) n++;
+    return `<div class="tl-item${selId === k ? ' sel' : ''}" data-k="${k}" style="--c:${c}"><span class="tl-num${alt ? ' alt' : ''}">${alt ? '' : n}</span>
+      <div class="card" role="button" tabindex="0"><div class="tl-head"><span class="time">${alt ? '备选' : esc(l.time || '')}</span><span class="type-tag"><i data-lucide="${TYPE_ICON[l.type] || 'map-pin'}"></i>${TYPE_NAME[l.type] || '地点'}</span></div>
+      <div class="name">${esc(l.name)}</div>${l.desc ? `<div class="desc">${esc(l.desc)}</div>` : ''}</div></div>`; };
+  const main = [], alt = []; d.locations.forEach((l, k) => (l.time === '—' ? alt : main).push([l, k]));
+  return `<div class="day-head" style="--c:${c}"><span class="day-chip">${esc(d.label || 'D' + i)}</span><h2>${esc(d.title || '')}</h2><p class="num">${esc(d.date || '')}</p></div>
+    ${main.length ? `<div class="timeline">${main.map(([l, k]) => item(l, k)).join('')}</div>` : ''}${alt.length ? `<div class="sh">备选</div><div class="timeline">${alt.map(([l, k]) => item(l, k)).join('')}</div>` : ''}`;
+}
+function renderNav() {
+  const tabs = [['总览', 0], ...days.map((d, i) => [d.label || 'D' + (i + 1), i + 1])];
+  $('#tabs').innerHTML = tabs.map(([l, i]) => `<button class="chip${i ? ' day' : ''}${i === cur ? ' on' : ''}" role="tab" aria-selected="${i === cur}" data-i="${i}"${i ? ` style="--c:${dayHex(i)}"` : ''}>${esc(l)}</button>`).join('');
+  $('#dayList').innerHTML = tabs.map(([l, i]) => `<button class="gd${i === cur ? ' on' : ''}" data-i="${i}"><i class="dot" style="--c:${i ? dayHex(i) : 'var(--ink-2)'}"></i><span class="l">${esc(l)}</span><span class="t">${i ? esc(days[i - 1].title || '') : '概况、游记、链接'}</span></button>`).join('');
+  $('#tabs').hidden = !days.length;
+}
+function show(i) {
+  cur = i; selId = null; renderNav();
+  $('#content').innerHTML = i === 0 ? overview() : dayView(i); $('#content').scrollTop = 0;
+  icons($('#content')); drawMap(); if (i === 0) showFavs(T);
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b && (b.closest('#tabs') || b.closest('#dayList'))) show(+b.dataset.i); });
+$('#content').addEventListener('click', e => { const it = e.target.closest('.tl-item'); if (it) select(+it.dataset.k, 'card'); });
+$('#content').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.tl-item > .card')) { e.preventDefault(); e.target.click(); } });
+
+/* ---------- phone bottom sheet ---------- */
+const panel = $('#panel'), handle = $('#handle');
+const SHEET = { min: () => 170, half: () => Math.round(innerHeight * .5), full: () => innerHeight - ($('.t-top').offsetHeight || 80) - 6 };
+let sheetState = 'half';
+function setSheet(st) { sheetState = st; panel.style.setProperty('--peek', SHEET[st]() + 'px'); }
+let dragY = null, dragStart = 0, dragMoved = false;
+handle.addEventListener('click', () => { if (!dragMoved) setSheet(sheetState === 'min' ? 'half' : sheetState === 'half' ? 'full' : 'min'); });
+handle.addEventListener('pointerdown', e => { dragY = e.clientY; dragStart = SHEET[sheetState](); dragMoved = false; panel.classList.add('drag'); handle.setPointerCapture(e.pointerId); });
+handle.addEventListener('pointermove', e => { if (dragY === null) return; const dy = dragY - e.clientY; if (Math.abs(dy) > 4) dragMoved = true; panel.style.setProperty('--peek', Math.max(120, Math.min(SHEET.full(), dragStart + dy)) + 'px'); });
+handle.addEventListener('pointerup', e => { if (dragY === null) return; panel.classList.remove('drag'); const h = dragStart + (dragY - e.clientY); dragY = null;
+  if (!dragMoved) return; setSheet(Object.keys(SHEET).sort((a, b) => Math.abs(SHEET[a]() - h) - Math.abs(SHEET[b]() - h))[0]); setTimeout(() => { dragMoved = false; }, 0); });
+addEventListener('resize', () => { setSheet(sheetState); if (map) map.invalidateSize(); });
+setSheet('half');
+
+/* ---------- public favourites for this trip ---------- */
 function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
 async function publicFavs(filter) {
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
@@ -120,14 +223,23 @@ async function publicFavs(filter) {
   if (filter) q = q.where('tripId', '==', filter);
   return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() }));
 }
+let favCache = null;
 async function showFavs(t) {
   try {
-    const fs = (await publicFavs(t.id)).sort((a, b) => b.rating - a.rating); if (!fs.length) return;
-    document.getElementById('tripFavs').innerHTML = `<div class="section">这次旅行的收藏</div><div class="card">${fs.map(f => `<a class="fav" href="favorites.html?trip=${encodeURIComponent(t.id)}"><span>${esc(f.name)}</span><span class="st">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span></a>`).join('')}</div>`;
+    if (!favCache) favCache = (await publicFavs(t.id)).sort((a, b) => b.rating - a.rating);
+    const el = $('#tripFavs'); if (!el || !favCache.length) return;
+    el.innerHTML = `<div class="sh">这次旅行的收藏</div><div class="card">${favCache.map(f => `<a class="fav" href="favorites.html?trip=${encodeURIComponent(t.id)}"><span>${esc(f.name)}</span><span class="stars">${'★'.repeat(f.rating)}<span class="off">${'★'.repeat(5 - f.rating)}</span></span></a>`).join('')}</div>`;
   } catch (e) {}
 }
+
+icons(document);
 if (!id) notFound();
-else fetch('trips.json', { cache: 'no-cache' }).then(r => r.json()).then(d => { const t = (d.trips || []).find(x => x.id === id); t && t.start && t.end ? render(t) : notFound(); }).catch(notFound);
+else fetch('trips.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+  const t = (d.trips || []).find(x => x.id === id); if (!t || !t.start || !t.end) return notFound();
+  T = t; days = Array.isArray(t.days) ? t.days.filter(x => x && Array.isArray(x.locations)) : [];
+  document.title = t.title; $('#tTitle').textContent = t.title; $('#tTitle2').textContent = t.title;
+  initMap(); show(0);
+}).catch(notFound);
 </script>
 </body>
 </html>
