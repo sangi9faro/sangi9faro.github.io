@@ -201,3 +201,11 @@ body.tn{--tabbar-h:calc(56px + var(--safe-b))}
   .fl-end .tm{font-size:20px}
   .fl-in{grid-template-columns:minmax(0,1fr) minmax(64px,.8fr) minmax(0,1fr);gap:6px}
 }
+
+/* ── iPhone home-screen app: status bar is transparent (black-translucent, white text) ──
+   light mode gets a soft dark strip under the status bar so the time and battery stay readable */
+@media (display-mode: standalone){
+  :root:not([data-theme="dark"]) body::after{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);
+    background:linear-gradient(rgba(0,0,0,.25),transparent);z-index:9999;pointer-events:none}
+}
+@media (display-mode: standalone) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body::after{display:none} }

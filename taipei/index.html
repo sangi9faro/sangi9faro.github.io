@@ -2,13 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<script>/* theme-color follows a manual light/dark switch (data-theme) */(function(){var C={light:'#F4F6F8',dark:'#0E1419'},r=document.documentElement;function s(){var t=r.getAttribute('data-theme');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=C[t]||(/dark/.test(m.media)?C.dark:C.light)})}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['data-theme']})})();</script>
 <title>台北圣诞行</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌴</text></svg>">
 <meta name="description" content="12/25–12/29 台北圣诞行程">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -59,6 +62,13 @@ a:hover { text-decoration: underline; }
 
 /* ── Map ── */
 #map { width: 100%; height: 40vh; min-height: 280px; position: sticky; top: 0; z-index: 100; }
+/* home-screen app: the map runs under the status bar, its controls move below it */
+#map .leaflet-top { top: var(--safe-top); }
+@media (display-mode: standalone) {
+  :root:not([data-theme="dark"]) body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: var(--safe-top);
+    background: linear-gradient(rgba(0,0,0,.25), transparent); z-index: 10000; pointer-events: none; }
+}
+@media (display-mode: standalone) and (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::after { display: none; } }
 .locate-btn {
   width: 36px; height: 36px; border-radius: 8px;
   background: rgba(255,255,255,.92); backdrop-filter: blur(8px);

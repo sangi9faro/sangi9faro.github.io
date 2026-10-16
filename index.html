@@ -3,15 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<script>/* theme-color follows a manual light/dark switch (data-theme) */(function(){var C={light:'#F4F6F8',dark:'#0E1419'},r=document.documentElement;function s(){var t=r.getAttribute('data-theme');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=C[t]||(/dark/.test(m.media)?C.dark:C.light)})}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['data-theme']})})();</script>
 <meta name="robots" content="noindex,nofollow">
 <title>Faro 的旅行</title>
 <script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="旅行">
-<meta name="theme-color" content="#F4F6F8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
