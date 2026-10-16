@@ -5,141 +5,226 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Faro 的旅行</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="旅行">
-<meta name="theme-color" content="#f5f5f7">
+<meta name="theme-color" content="#F4F6F8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="ui.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
-/* Same visual language as the guide pages (Apple-style tokens) */
-:root{
-  --bg:#f5f5f7; --surface:#fff; --grouped:#f2f2f7; --ink:#1d1d1f; --muted:#86868b; --line:rgba(60,60,67,.12); --accent:#0071e3;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); --shadow-md:0 4px 14px rgba(0,0,0,.08);
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
+/* index.html — layout only; tokens and shared components live in ui.css */
+.h{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "up" "map" "rec";gap:0 24px;padding:calc(18px + var(--safe-t)) 16px calc(96px + var(--safe-b));max-width:1600px;margin:0 auto}
+.h-head{grid-area:head}
+.h-up{grid-area:up}
+.h-mapcol{grid-area:map}
+.h-rec{grid-area:rec}
+/* side nav: bottom tab bar on phones */
+.h-side{position:fixed;left:0;right:0;bottom:0;z-index:900;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);padding:6px 16px calc(6px + var(--safe-b));display:flex;justify-content:space-around}
+.h-side .brand,.h-side .theme{display:none}
+.nav-i{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;min-height:48px;justify-content:center;border-radius:12px;color:var(--ink-2);font-size:12px;font-weight:700}
+.nav-i[aria-current="page"]{color:var(--accent)}
+/* head */
+.hello{font-size:28px;font-weight:800;letter-spacing:-.01em}
+.stats{display:flex;gap:22px;margin:10px 0 4px}
+.stat b{display:block;font:800 28px/1.1 var(--font-num)}
+.stat span{font-size:13px;color:var(--ink-2)}
+.favline{display:inline-flex;align-items:center;gap:6px;margin:8px 0 2px;font-weight:700}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:26px 2px 12px}
+.sec h2{font-size:20px}
+/* upcoming hero card */
+.hero{position:relative;display:block;border-radius:var(--r-l);overflow:hidden;min-height:300px;background:var(--surface-2) center/cover no-repeat;color:#fff;transition:transform .15s}
+.hero:active{transform:scale(.98)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,20,25,0) 30%,rgba(14,20,25,.78) 100%)}
+.hero .in{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:18px 18px 16px}
+.hero .pill{position:absolute;z-index:1;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:#13202B;border-radius:999px;padding:4px 11px;font-size:13px;font-weight:700}
+.hero .pill i{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.hero .pill.now i{background:var(--coral)}
+.hero h3{font-size:28px;font-weight:800}
+.hero .meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:14px;opacity:.92}
+.hero .meta .num{font-weight:700}
+.cd{position:absolute;z-index:1;top:12px;right:12px;background:var(--coral);color:#fff;border-radius:14px;padding:6px 12px;text-align:center;line-height:1}
+.cd b{display:block;font:800 30px/1 var(--font-num)}
+.cd span{font-size:12px;font-weight:700}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.upmore{display:grid;gap:14px}
+/* footprint map */
+.mapcard{position:relative;height:240px;border-radius:var(--r-l);overflow:hidden;box-shadow:var(--shadow-1)}
+#map{position:absolute;inset:0}
+.mapbtn{position:absolute;z-index:500;top:10px;right:10px;background:var(--surface);box-shadow:var(--shadow-2)}
+.mapcard.full{position:fixed;inset:0;height:auto;border-radius:0;z-index:2000}
+/* records */
+.year{font:800 17px var(--font-num);color:var(--ink-2);margin:18px 2px 10px}
+.grid{display:grid;gap:12px}
+.tc{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;padding:10px;color:var(--ink);transition:transform .15s,box-shadow .15s}
+.tc:active{transform:scale(.98)}
+.tc .th{aspect-ratio:1;border-radius:12px;background:var(--surface-2) center/cover no-repeat;display:grid;place-items:center;color:#fff;font-weight:800}
+.tc h3{font-size:17px}
+.tc .m{font-size:13px;color:var(--ink-2);margin-top:2px}
+.tc.hl,.hero.hl{box-shadow:0 0 0 3px var(--accent)}
+.sk-hero{height:300px}
+.sk-row{height:96px;margin-top:12px}
+.err{color:var(--bad)}
+.credit{font-size:12px;color:var(--ink-2);margin:28px 2px 0}
+.credit a{text-decoration:underline;color:var(--ink-2)}
+/* tablet + desktop: side nav | content | sticky full-height map */
+@media (min-width:768px){
+  .h{grid-template-columns:200px minmax(0,1.4fr) minmax(0,1fr);grid-template-areas:"side head map" "side up map" "side rec map";align-items:start;padding:28px 24px 40px 0;max-width:1600px}
+  .h-side{position:sticky;top:0;grid-area:side;align-self:start;height:100dvh;flex-direction:column;justify-content:flex-start;gap:4px;border-top:0;border-right:1px solid var(--line);
+    background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;padding:24px 14px;margin-top:-28px}
+  .h-side .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;padding:0 8px 18px}
+  .h-side .brand img{width:34px;height:34px;border-radius:10px}
+  .nav-i{flex-direction:row;justify-content:flex-start;gap:10px;font-size:15px;padding:0 12px;min-height:44px;color:var(--ink)}
+  .nav-i[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .h-side .theme{display:flex;margin-top:auto}
+  .h-mapcol{position:sticky;top:0;grid-row:1/4;padding-top:2px}
+  .h-mapcol .sec{margin-top:0}
+  .mapcard{height:calc(100dvh - 96px)}
+  .mapbtn{display:none}
+  .hero{min-height:360px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tc{grid-template-columns:minmax(0,1fr);padding:0;overflow:hidden}
+  .tc .th{aspect-ratio:4/3;border-radius:0}
+  .tc .tx{padding:10px 14px 14px}
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-md:none;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--grouped:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--line:rgba(84,84,88,.55);--accent:#0a84ff;--shadow:none;--shadow-md:none;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-.wrap{max-width:680px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
-h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em}
-.stats{margin:4px 0 6px;color:var(--muted);font-size:15px}
-.nav2{display:inline-flex;background:var(--grouped);border-radius:980px;padding:3px;margin-bottom:12px}
-.nav2 a{border-radius:980px;padding:5px 16px;font-size:14px;font-weight:600;color:var(--muted)}
-.nav2 a.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.favline{display:inline-block;margin:0 0 16px;color:var(--accent);font-weight:600;font-size:15px}
-.section{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:26px 2px 10px}
-#map{height:300px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--grouped)}
-.pop a{color:var(--accent);font-weight:600}
-/* upcoming: big cards */
-.big{display:block;background:var(--surface);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:16px}
-.cover{position:relative;height:180px;background:var(--grouped) center/cover no-repeat}
-.cover .nocover{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:28px;font-weight:700}
-.pill{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);color:#1d1d1f;border-radius:980px;padding:4px 11px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
-.pill i{width:7px;height:7px;border-radius:50%;background:#34c759}.pill.now i{background:#ff9500}
-.cd{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:12px;padding:6px 12px;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
-.big .body{padding:14px 16px 4px}
-.big h2{margin:0 0 4px;font-size:22px;letter-spacing:-0.02em}
-.meta{color:var(--muted);font-size:14px;display:grid;gap:2px}
-.acts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 16px}
-.acts a{background:var(--grouped);color:var(--accent);border-radius:980px;padding:6px 14px;font-size:14px;font-weight:600}
-/* records: small cards */
-.year{font-size:20px;font-weight:700;margin:18px 2px 8px}
-.small{display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:center;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:10px;margin-bottom:10px}
-.small .thumb{height:70px;border-radius:12px;background:var(--grouped) center/cover no-repeat;display:grid;place-items:center;color:#fff;font-weight:700}
-.small h3{margin:0 0 2px;font-size:16px}
-.empty{color:var(--muted);font-size:14px;background:var(--surface);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
-.err{color:#d70015}
-.credit{margin-top:28px;font-size:11.5px;color:var(--muted);text-align:center}
-.credit a{text-decoration:underline}
+@media (min-width:1200px){
+  .h{grid-template-columns:220px minmax(0,1.5fr) minmax(0,1fr)}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hero{min-height:400px}
+  .hello{font-size:40px}
+}
 </style>
 </head>
 <body>
-<main class="wrap">
-  <nav class="nav2" aria-label="导航"><a class="on" href="./" aria-current="page">旅行</a><a href="favorites.html">收藏</a></nav>
-  <h1 id="title">我的旅行</h1>
-  <div class="stats" id="stats">加载中…</div>
-  <a class="favline" id="favLine" href="favorites.html" hidden></a>
+<div class="h">
+  <nav class="h-side" aria-label="导航">
+    <div class="brand"><img src="icon-192.png" alt="">Faro</div>
+    <a class="nav-i" href="./" aria-current="page"><i data-lucide="map"></i>旅行</a>
+    <a class="nav-i" href="favorites.html"><i data-lucide="heart"></i>收藏</a>
+    <button class="btn btn-sm theme" id="themeBtn" aria-label="切换深色模式"><i data-lucide="moon"></i><span>深色模式</span></button>
+  </nav>
 
-  <div id="map" role="region" aria-label="足迹地图"></div>
+  <header class="h-head">
+    <h1 class="hello" id="title">Faro 的旅行</h1>
+    <div class="stats" id="stats"><div class="sk" style="width:220px;height:46px"></div></div>
+    <a class="favline" id="favLine" href="favorites.html" hidden></a>
+  </header>
 
-  <div class="section">即将出发</div>
-  <div id="upcoming"></div>
+  <section class="h-up" aria-labelledby="upT">
+    <div class="sec"><h2 id="upT">即将出发</h2></div>
+    <div id="upcoming"><div class="sk sk-hero"></div></div>
+  </section>
 
-  <div class="section">旅行记录</div>
-  <div id="records"></div>
+  <section class="h-mapcol" aria-label="足迹地图">
+    <div class="sec" id="mapSec"><h2>足迹</h2></div>
+    <div class="mapcard card" id="mapcard"><div id="map"></div>
+      <button class="btn btn-sm mapbtn" id="mapBtn" aria-label="全屏地图"><i data-lucide="maximize-2" class="i18"></i></button></div>
+  </section>
 
-  <p class="credit">封面：台北 chsyang（公有领域）· 芽庄 Minh Duc Ly（公有领域），来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a> · 地图 © OpenStreetMap<br>
-  iPhone 用 Safari「分享 → 添加到主屏幕」，可以像 App 一样打开。</p>
-</main>
+  <section class="h-rec" aria-labelledby="recT">
+    <div class="sec"><h2 id="recT">旅行记录</h2></div>
+    <div id="records"><div class="sk sk-row"></div></div>
+    <p class="credit">封面：台北 chsyang（公有领域）· 芽庄 Minh Duc Ly（公有领域），来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a> · 地图 © OpenStreetMap contributors。iPhone 用 Safari「分享 → 添加到主屏幕」，可以像 App 一样打开。</p>
+  </section>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const icons = root => { try { if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': 1.75 }, root }); } catch (e) {} };
 const DAY = 86400000;
-// ?today=2027-01-01 lets you preview how the page looks on another date
+// ?today=2027-01-01 previews the page on another date
 const TODAY = (() => { const q = new URLSearchParams(location.search).get('today'); const d = q ? new Date(q + 'T12:00:00') : new Date(); return isNaN(d) ? new Date() : d; })();
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const today = ymd(TODAY);
 const days = t => Math.round((new Date(t.end) - new Date(t.start)) / DAY) + 1;
 const status = t => today < t.start ? 'planned' : today > t.end ? 'done' : 'now';
 const md = s => `${+s.slice(5, 7)}/${+s.slice(8)}`;
-const range = t => `${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)} · ${days(t)} 天`;
+const range = t => `${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)}`;
 const target = t => (t.site && (t.site.guide || t.site.home)) || `trip.html?id=${encodeURIComponent(t.id)}`;
-const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0071e3';
-const coverStyle = t => t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:linear-gradient(135deg,${color(t.color)},#5ac8fa)`;
+const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0B7A8C';
+const bg = t => t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:${color(t.color)}`;
+
+/* theme toggle (shared across all pages via localStorage) */
+function syncThemeBtn() { const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  $('#themeBtn').innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}"></i><span>${dark ? '浅色模式' : '深色模式'}</span>`; $('#themeBtn').setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式'); icons($('#themeBtn')); }
+$('#themeBtn').addEventListener('click', () => { const dark = !(document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'; try { localStorage.setItem('theme', document.documentElement.dataset.theme); } catch (e) {} syncThemeBtn(); });
+syncThemeBtn();
+
+/* footprint map: one layer per trip so cards and points can highlight each other */
+let map = null; const tripLayers = {};
+function hl(id, on) {
+  document.querySelectorAll(`[data-trip="${CSS.escape(id)}"]`).forEach(el => el.classList.toggle('hl', on));
+  const L0 = tripLayers[id]; if (!L0) return;
+  L0.line && L0.line.setStyle({ weight: on ? 6 : 4, opacity: on ? 1 : .85 });
+  L0.pts.forEach(m => m.setStyle({ radius: on ? 10 : 7 }));
+}
+function buildMap(trips) {
+  if (!window.L) { $('#map').innerHTML = '<div class="empty"><i data-lucide="map-off"></i>地图加载失败，检查一下网络。</div>'; icons($('#map')); return; }
+  map = L.map('map', { zoomControl: false, scrollWheelZoom: innerWidth >= 768 });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, className: 'tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+  const all = [];
+  trips.forEach(t => {
+    const ps = (t.places || []).filter(p => typeof p.lat === 'number' && typeof p.lng === 'number'); if (!ps.length) return;
+    const c = color(t.color), layer = { pts: [] };
+    if (ps.length > 1) layer.line = L.polyline(ps.map(p => [p.lat, p.lng]), { color: c, weight: 4, opacity: .85 }).addTo(map);
+    ps.forEach(p => { all.push([p.lat, p.lng]);
+      const m = L.circleMarker([p.lat, p.lng], { radius: 7, color: '#fff', weight: 2.5, fillColor: c, fillOpacity: 1 }).addTo(map)
+        .bindPopup(`<b>${esc(t.title)}</b> · ${esc(p.name)}<br><a href="${esc(target(t))}">进入这次旅行 ›</a>`);
+      m.on('mouseover', () => hl(t.id, true)); m.on('mouseout', () => hl(t.id, false)); layer.pts.push(m); });
+    tripLayers[t.id] = layer;
+  });
+  if (all.length) map.fitBounds(all, { padding: [36, 36], maxZoom: 9 }); else map.setView([20, 110], 3);
+}
+$('#mapBtn').addEventListener('click', () => { const c = $('#mapcard'), full = c.classList.toggle('full');
+  $('#mapBtn').innerHTML = `<i data-lucide="${full ? 'minimize-2' : 'maximize-2'}" class="i18"></i>`; $('#mapBtn').setAttribute('aria-label', full ? '退出全屏' : '全屏地图'); icons($('#mapBtn'));
+  if (map) setTimeout(() => map.invalidateSize(), 50); });
 
 function render(data) {
   const trips = (data.trips || []).filter(t => t && t.id && t.start && t.end);
   $('#title').textContent = `${data.owner || '我'} 的旅行`; document.title = $('#title').textContent;
-
   // stats from finished + ongoing trips
   const counted = trips.filter(t => status(t) !== 'planned');
   const countries = new Set(counted.map(t => t.countryCode || t.country)), cities = new Set(counted.flatMap(t => t.route || []));
   const dates = new Set(); counted.forEach(t => { for (let d = new Date(t.start + 'T12:00:00'); ymd(d) <= t.end; d = new Date(+d + DAY)) dates.add(ymd(d)); });
-  $('#stats').textContent = `去过 ${countries.size} 个国家/地区 · ${cities.size} 个城市 · 共 ${dates.size} 天`;
+  $('#stats').innerHTML = [[countries.size, '国家/地区'], [cities.size, '城市'], [dates.size, '天']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
 
-  // upcoming (planned + ongoing), soonest first
+  // upcoming: the soonest as a big hero card, quick links underneath
   const up = trips.filter(t => status(t) !== 'done').sort((a, b) => a.start.localeCompare(b.start));
   $('#upcoming').innerHTML = up.length ? up.map(t => {
     const st = status(t), n = Math.round((new Date(t.start + 'T00:00:00') - new Date(today + 'T00:00:00')) / DAY);
-    const cd = st === 'now' ? `第 ${Math.round((new Date(today) - new Date(t.start)) / DAY) + 1} 天` : `还有 ${n} 天`;
-    const site = t.site || {}, acts = [['攻略', site.guide], ['工具箱', site.home], ['投票', site.vote]].filter(a => a[1]);
-    return `<div class="big"><a href="${esc(target(t))}">
-      <div class="cover" style="${coverStyle(t)}">${t.cover ? '' : `<span class="nocover">${esc(t.title)}</span>`}
-        <span class="pill ${st}"><i></i>${st === 'now' ? '进行中' : '计划中'}</span><span class="cd">${cd}</span></div>
-      <div class="body"><h2>${esc(t.title)}</h2><div class="meta"><span>${range(t)}${t.members ? ` · ${t.members} 人` : ''}</span><span>${(t.route || []).map(esc).join(' → ')}</span></div></div></a>
-      ${acts.length ? `<div class="acts">${acts.map(([l, h]) => `<a href="${esc(h)}">${l} ›</a>`).join('')}</div>` : '<div style="height:12px"></div>'}</div>`;
-  }).join('') : `<div class="empty">暂时没有计划中的旅行。</div>`;
+    const cd = st === 'now' ? `<b>第 ${Math.round((new Date(today) - new Date(t.start)) / DAY) + 1} 天</b><span>旅行中</span>` : `<b>${n}</b><span>天后出发</span>`;
+    const site = t.site || {}, acts = [['攻略', site.guide, 'book-open'], ['工具箱', site.home, 'briefcase'], ['投票', site.vote, 'vote']].filter(a => a[1]);
+    return `<a class="hero" data-trip="${esc(t.id)}" href="${esc(target(t))}" style="${bg(t)}">
+        <span class="pill ${st}"><i></i>${st === 'now' ? '进行中' : '计划中'}</span><span class="cd num">${cd}</span>
+        <div class="in"><h3>${esc(t.title)}</h3><div class="meta"><span class="num">${range(t)} · ${days(t)} 天</span><span>${(t.route || []).map(esc).join(' → ')}</span>${t.members ? `<span>${t.members} 人</span>` : ''}</div></div></a>
+      ${acts.length ? `<div class="acts">${acts.map(([l, h, ic]) => `<a class="btn btn-sm" href="${esc(h)}"><i data-lucide="${ic}" class="i18"></i>${l}</a>`).join('')}</div>` : '<div style="height:18px"></div>'}`;
+  }).join('') : `<div class="empty card"><i data-lucide="plane-takeoff"></i>暂时没有计划中的旅行。<a class="btn btn-sm" href="https://github.com/sangi9faro/sangi9faro.github.io/edit/main/trips.json" target="_blank" rel="noopener">在 trips.json 里加一条</a></div>`;
 
-  // records grouped by the year the trip ended, newest first
+  // records grouped by the year the trip ended
   const done = trips.filter(t => status(t) === 'done').sort((a, b) => b.end.localeCompare(a.end));
-  if (!done.length) $('#records').innerHTML = `<div class="empty">还没有记录。在 trips.json 里加一条就会出现在这里。</div>`;
+  if (!done.length) $('#records').innerHTML = `<div class="empty card"><i data-lucide="notebook-pen"></i>还没有记录。在 trips.json 里加一条就会出现在这里。<a class="btn btn-sm" href="https://github.com/sangi9faro/sangi9faro.github.io/edit/main/trips.json" target="_blank" rel="noopener">编辑 trips.json</a></div>`;
   else { let h = '', yr = '';
-    done.forEach(t => { const y = t.end.slice(0, 4); if (y !== yr) { yr = y; h += `<div class="year">${y}</div>`; }
-      h += `<a class="small" href="${esc(target(t))}"><div class="thumb" style="${coverStyle(t)}">${t.cover ? '' : esc((t.title || '').slice(0, 2))}</div>
-        <div><h3>${esc(t.title)}</h3><div class="meta"><span>${range(t)}</span><span>${esc(t.country || '')}${t.members ? ` · ${t.members} 人` : ''}</span></div></div></a>`; });
-    $('#records').innerHTML = h; }
+    done.forEach(t => { const y = t.end.slice(0, 4); if (y !== yr) { if (yr) h += '</div>'; yr = y; h += `<div class="year">${y}</div><div class="grid">`; }
+      h += `<a class="tc card" data-trip="${esc(t.id)}" href="${esc(target(t))}"><div class="th" style="${bg(t)}">${t.cover ? '' : esc((t.title || '').slice(0, 2))}</div>
+        <div class="tx"><h3>${esc(t.title)}</h3><div class="m num">${range(t)} · ${days(t)} 天</div><div class="m">${esc(t.country || '')}${t.members ? ` · ${t.members} 人` : ''}</div></div></a>`; });
+    $('#records').innerHTML = h + '</div>'; }
 
-  // footprint map
-  if (!window.L) { $('#map').innerHTML = '<p style="padding:16px;color:var(--muted)">地图加载失败，检查一下网络。</p>'; return; }
-  const map = L.map('map', { zoomControl: false, scrollWheelZoom: false }); L.control.zoom({ position: 'topright' }).addTo(map);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
-  const pts = [];
-  trips.forEach(t => { const ps = (t.places || []).filter(p => typeof p.lat === 'number' && typeof p.lng === 'number'); if (!ps.length) return;
-    if (ps.length > 1) L.polyline(ps.map(p => [p.lat, p.lng]), { color: color(t.color), weight: 2, opacity: .7, dashArray: '5,6' }).addTo(map);
-    ps.forEach(p => { pts.push([p.lat, p.lng]);
-      L.circleMarker([p.lat, p.lng], { radius: 7, color: '#fff', weight: 2, fillColor: color(t.color), fillOpacity: .95 }).addTo(map)
-        .bindPopup(`<div class="pop"><b>${esc(t.title)}</b> · ${esc(p.name)}<br><a href="${esc(target(t))}">进入这次旅行 ›</a></div>`); }); });
-  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 9 }); else map.setView([20, 110], 3);
+  document.querySelectorAll('[data-trip]').forEach(el => { el.addEventListener('mouseenter', () => hl(el.dataset.trip, true)); el.addEventListener('mouseleave', () => hl(el.dataset.trip, false)); });
+  icons(document);
+  buildMap(trips);
 }
 
-
-// public favourites (no sign-in needed: rules let anyone read non-private docs)
+// public favourites count (no sign-in needed: rules let anyone read non-private docs)
 function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
 async function publicFavs(filter) {
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
@@ -149,8 +234,9 @@ async function publicFavs(filter) {
   if (filter) q = q.where('tripId', '==', filter);
   return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() }));
 }
-publicFavs().then(fs => { const l = $('#favLine'); l.textContent = `收藏了 ${fs.length} 个地方 ›`; l.hidden = false; }).catch(() => {});
+publicFavs().then(fs => { const l = $('#favLine'); l.innerHTML = `<i data-lucide="heart" class="i18"></i>收藏了 <span class="num">${fs.length}</span> 个地方 ›`; l.hidden = false; icons(l); }).catch(() => {});
 
+icons(document);
 fetch('trips.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(render)
   .catch(() => { $('#stats').innerHTML = '<span class="err">trips.json 读取失败，检查一下文件格式。</span>'; });
 </script>
