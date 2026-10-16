@@ -3,12 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<script>/* theme-color follows a manual light/dark switch (data-theme) */(function(){var C={light:'#F4F6F8',dark:'#0E1419'},r=document.documentElement;function s(){var t=r.getAttribute('data-theme');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=C[t]||(/dark/.test(m.media)?C.dark:C.light)})}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['data-theme']})})();</script>
 <meta name="robots" content="noindex,nofollow">
 <title>收藏 · Faro 的旅行</title>
 <script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="旅行">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -35,7 +41,7 @@ body.fv{overflow:hidden}
 #cats .chip{background:var(--surface);box-shadow:var(--shadow-1)}
 #cats .chip.on{background:var(--ink);color:var(--bg)}
 /* phone: list in a draggable bottom sheet (real height changes so scrolling reaches the bottom) */
-.fv-side{position:fixed;left:0;right:0;bottom:0;z-index:800;height:var(--peek,170px);max-height:calc(100dvh - 60px);background:var(--bg);border-radius:var(--r-l) var(--r-l) 0 0;
+.fv-side{position:fixed;left:0;right:0;bottom:0;z-index:800;height:var(--peek,170px);max-height:calc(100dvh - 60px - var(--safe-t));background:var(--bg);border-radius:var(--r-l) var(--r-l) 0 0;
   box-shadow:var(--shadow-2);display:flex;flex-direction:column;transition:height .32s cubic-bezier(.2,.8,.2,1)}
 .fv-side.drag{transition:none}
 .g-handle{flex-shrink:0;height:30px;border:0;background:none;display:grid;place-items:center;cursor:grab;touch-action:none}
@@ -74,7 +80,7 @@ body.fv{overflow:hidden}
 #fab{position:fixed;right:16px;bottom:calc(var(--peek,170px) + 14px);z-index:900;width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-2);display:grid;place-items:center;cursor:pointer;transition:bottom .32s}
 #fab svg.lucide{width:28px;height:28px}
 .sheet-bg{position:fixed;inset:0;background:rgba(14,20,25,.4);z-index:1200;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92dvh;overflow:auto;border-radius:var(--r-l) var(--r-l) 0 0;padding:18px 16px calc(18px + var(--safe-b));display:grid;gap:12px}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:min(92dvh,calc(100dvh - var(--safe-t) - 12px));overflow:auto;border-radius:var(--r-l) var(--r-l) 0 0;padding:18px 16px calc(18px + var(--safe-b));display:grid;gap:12px}
 .sheet h2{font-size:20px;display:flex;align-items:center;gap:8px}
 .sheet label{display:grid;gap:4px;font-size:13px;color:var(--ink-2);min-width:0}
 .sheet input,.sheet select,.sheet textarea{font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:10px 12px;width:100%;min-width:0}
@@ -97,7 +103,7 @@ body.fv{overflow:hidden}
 @media (min-width:768px){
   body.fv{display:grid;grid-template-columns:minmax(340px,400px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:100dvh}
   #map{position:relative;inset:auto;grid-column:2;grid-row:1/3;height:100dvh}
-  .fv-top{position:static;grid-column:1;grid-row:1;pointer-events:auto;background:var(--bg);padding:16px 16px 4px;border-right:1px solid var(--line)}
+  .fv-top{position:static;grid-column:1;grid-row:1;pointer-events:auto;background:var(--bg);padding:calc(16px + var(--safe-t)) 16px 4px;border-right:1px solid var(--line)}
   .fv-back,.fv-title,.auth{box-shadow:none;background:var(--surface-2)}
   #cats .chip{box-shadow:none;background:var(--surface-2)}
   .fv-side{position:static;grid-column:1;grid-row:2;height:auto;max-height:none;border-radius:0;box-shadow:none;transition:none;border-right:1px solid var(--line)}
