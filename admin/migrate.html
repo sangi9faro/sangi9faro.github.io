@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<title>迁移越南数据</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="../ui.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+/* admin/migrate.html — one-off owner tool: copy the Vietnam top-level collections into trips/vietnam-2026/… */
+.mg{max-width:880px;margin:0 auto;padding:calc(20px + var(--safe-t)) 16px calc(40px + var(--safe-b));display:grid;gap:14px}
+.mg h1{display:flex;align-items:center;gap:8px;font-size:22px}
+.card{padding:16px;display:grid;gap:10px}
+.card h2{font-size:17px;display:flex;align-items:center;gap:8px} .card h2 svg{color:var(--accent)}
+.sub{margin:0;color:var(--ink-2);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.who{font-weight:700}
+.warn{padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-top:1px solid var(--line);text-align:left}
+th{font-size:12px;color:var(--ink-2);font-weight:700;border-top:0}
+td.n{font:700 14px var(--font-num);text-align:right} th.n{text-align:right}
+.ok{color:var(--good);font-weight:700} .bad{color:var(--bad);font-weight:700}
+.log{max-height:260px;overflow:auto;margin:0;padding:10px 12px;border-radius:12px;background:var(--surface-2);font:12px/1.6 var(--font-num);white-space:pre-wrap}
+.map td code{font:12px var(--font-num)}
+#emuBadge{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+<main class="mg">
+  <h1><i data-lucide="database-zap"></i>迁移越南数据 <span id="emuBadge" hidden>本地模拟器</span></h1>
+  <p class="sub">把旧的越南数据（顶层集合）复制到 <code>trips/vietnam-2026/…</code>。可以重复执行：已经存在的文档会跳过。旧数据不删除。</p>
+
+  <section class="card">
+    <h2><i data-lucide="user-round-check"></i>登录</h2>
+    <p class="sub" id="authState">正在连接…</p>
+    <div class="row">
+      <button class="btn btn-primary" id="loginGoogle" hidden><i data-lucide="log-in" class="i18"></i>用 Google 登录</button>
+      <button class="btn" id="loginEmu" hidden><i data-lucide="log-in" class="i18"></i>模拟器：以主人身份登录</button>
+    </div>
+  </section>
+
+  <section class="card" id="runCard" hidden>
+    <h2><i data-lucide="copy"></i>迁移</h2>
+    <p class="warn">迁移前先确认：新规则已经发布（<code>firebase deploy --only firestore:rules</code>）。迁移只复制，不会删除或修改旧数据。</p>
+    <div class="row">
+      <button class="btn btn-primary" id="run"><i data-lucide="play" class="i18"></i>开始迁移</button>
+      <button class="btn" id="templates"><i data-lucide="list-checks" class="i18"></i>写入清单模板</button>
+      <button class="btn" id="verify"><i data-lucide="scale" class="i18"></i>只核对数量</button>
+    </div>
+    <table id="counts" hidden><thead><tr><th>集合</th><th class="n">旧数量</th><th class="n">新数量</th><th class="n">本次写入</th><th>结果</th></tr></thead><tbody></tbody></table>
+    <div id="mapBox" hidden><h2><i data-lucide="users"></i>设备 → 成员</h2><p class="sub">从旧数据推断每台设备是谁（收藏人、发起人、投票、记账付款人）。推断不出的留空，那台设备原来记的账仍然只有它自己能改。</p>
+      <table class="map"><thead><tr><th>设备</th><th>成员</th><th>依据</th></tr></thead><tbody id="mapRows"></tbody></table></div>
+    <pre class="log" id="log"></pre>
+  </section>
+</main>
+
+<script>
+/* ---------- environment ---------- */
+const OWNER = 'X8BxRGYdemf6Wwb9MtQcLAxpy5q2', TRIP = 'vietnam-2026';
+const EMU = !/github\.io$/.test(location.hostname) && (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || new URLSearchParams(location.search).has('emu'));
+// the Vietnam site's static data (flights, hotels, phrases …) — live: same origin; local: the vietnam-trip dev server
+const VT = EMU ? 'http://localhost:8765/' : '/vietnam-trip/';
+const $ = s => document.querySelector(s);
+const log = m => { const el = $('#log'); el.textContent += m + '\n'; el.scrollTop = el.scrollHeight; };
+const icons = () => { try { lucide.createIcons({ attrs: { 'stroke-width': 1.75 } }); } catch (e) {} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+
+const OLD = ['days', 'expenses', 'settlements', 'checklist', 'packing', 'links', 'votes', 'quiz', 'people', 'notes', 'polls'];
+const BY_MEMBER = ['expenses', 'settlements', 'links', 'polls'];   // collections whose new rules accept byMember
+let db, auth;
+
+(async function start() {
+  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  try {
+    for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', '../firebase-config.js', VT + 'trip-data.js', VT + 'packing.js']) await loadScript(s);
+  } catch (e) { $('#authState').textContent = '载入失败：' + e.message; return; }
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  auth = firebase.auth(); db = firebase.firestore();
+  if (EMU) { auth.useEmulator('http://127.0.0.1:9199', { disableWarnings: true }); db.useEmulator('127.0.0.1', 8080); $('#emuBadge').hidden = false; }
+  auth.onAuthStateChanged(u => {
+    const owner = u && u.uid === OWNER;
+    $('#authState').innerHTML = !u ? '还没登录。' : owner ? `已登录：<span class="who">${esc(u.email || u.uid)}</span>（旅行主人）` : `当前账号不是旅行主人（${esc(u.email || u.uid)}），不能迁移。`;
+    $('#loginGoogle').hidden = !!owner || EMU; $('#loginEmu').hidden = !!owner || !EMU; $('#runCard').hidden = !owner; icons();
+  });
+  $('#loginGoogle').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => log('登录失败：' + e.message));
+  $('#loginEmu').onclick = () => auth.signInWithEmailAndPassword('owner@example.com', 'emulator-only').catch(e => log('模拟器登录失败：' + e.message));
+  $('#run').onclick = () => guard(migrate);
+  $('#verify').onclick = () => guard(async () => showCounts(await counts(), {}));
+  $('#templates').onclick = () => guard(writeTemplates);
+  icons();
+})();
+async function guard(fn) {
+  document.querySelectorAll('#runCard button').forEach(b => b.disabled = true);
+  try { await fn(); } catch (e) { log('出错：' + (e.code || '') + ' ' + e.message); }
+  document.querySelectorAll('#runCard button').forEach(b => b.disabled = false);
+}
+
+/* ---------- helpers ---------- */
+const tripRef = () => db.doc('trips/' + TRIP);
+const randCode = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let s = ''; const r = crypto.getRandomValues(new Uint32Array(10)); r.forEach(x => s += a[x % a.length]); return s; };
+async function writeAll(ops) {   // [{ref, data}] in batches of 400
+  for (let i = 0; i < ops.length; i += 400) { const b = db.batch(); ops.slice(i, i + 400).forEach(o => b.set(o.ref, o.data)); await b.commit(); }
+}
+async function oldDocs(name) { return (await db.collection(name).get()).docs; }
+async function counts() {
+  const out = {};
+  for (const c of OLD) {
+    const [a, b] = await Promise.all([db.collection(c).get(), tripRef().collection(c).get()]);
+    out[c] = [a.size, b.size];
+  }
+  // poll ballots live one level deeper
+  let ob = 0, nb = 0;
+  for (const p of (await db.collection('polls').get()).docs) ob += (await p.ref.collection('ballots').get()).size;
+  for (const p of (await tripRef().collection('polls').get()).docs) nb += (await p.ref.collection('ballots').get()).size;
+  out['polls/ballots'] = [ob, nb];
+  return out;
+}
+function showCounts(c, written) {
+  const rows = Object.entries(c).map(([k, [o, n]]) => `<tr><td>${k}</td><td class="n">${o}</td><td class="n">${n}</td><td class="n">${written[k] || 0}</td><td class="${o === n ? 'ok' : 'bad'}">${o === n ? '一致' : '不一致'}</td></tr>`).join('');
+  $('#counts tbody').innerHTML = rows; $('#counts').hidden = false;
+  const bad = Object.values(c).filter(([o, n]) => o !== n).length;
+  log(bad ? `核对：${bad} 个集合数量不一致` : '核对：所有集合的旧数量和新数量一致');
+  return !bad;
+}
+
+/* ---------- which device is which member (from the old data) ---------- */
+async function inferMembers(settings) {
+  const score = {}, why = {};
+  const add = (uid, m, w, src) => { if (!uid || !m) return; (score[uid] = score[uid] || {})[m] = (score[uid][m] || 0) + w; (why[uid] = why[uid] || new Set()).add(src); };
+  const names = settings.members || {};
+  for (const d of await oldDocs('links')) add(d.data().by, d.data().who, 3, '收藏');
+  for (const d of await oldDocs('days')) add(d.data().by, d.data().who, 3, '行程');
+  for (const p of await oldDocs('polls')) { add(p.data().by, p.data().who, 3, '发起投票'); for (const b of (await p.ref.collection('ballots').get()).docs) add(b.data().by, b.id, 3, '投票'); }
+  for (const d of await oldDocs('people')) { const m = Object.keys(names).find(k => names[k] && names[k] === d.data().name); add(d.id, m, 5, '名字'); }
+  for (const d of await oldDocs('expenses')) add(d.data().by, d.data().payer, 1, '记账付款人');
+  const map = {};
+  for (const [uid, s] of Object.entries(score)) {
+    const best = Object.entries(s).sort((a, b) => b[1] - a[1]);
+    map[uid] = best.length && (best.length === 1 || best[0][1] > best[1][1]) ? best[0][0] : null;   // a tie stays unknown
+  }
+  return { map, why };
+}
+
+/* ---------- migrate ---------- */
+async function migrate() {
+  log('—— 开始迁移 ——');
+  const settings = (await db.doc('meta/settings').get()).data() || {};
+  // 1. the trip itself
+  let trip = await tripRef().get(), joinCode;
+  if (trip.exists) { joinCode = trip.data().joinCode; log('trips/vietnam-2026 已存在，跳过'); }
+  else {
+    const M = window.TRIP_META; joinCode = randCode();
+    await tripRef().set({ title: M.title, start: M.start, end: M.end, country: M.country, countryCode: M.countryCode, route: M.route, places: M.places,
+      color: M.color, summary: M.summary, coverPos: '50% 50%', members: settings.members || {}, modules: { guide: true, tools: true, bills: true, packing: true, vote: true },
+      currencies: M.currencies, baseCurrency: M.baseCurrency, rates: settings.rates || {}, ratesAt: settings.ratesAt || 0, joinCode, visibility: 'members',
+      owner: auth.currentUser.uid, at: Date.now(), updatedAt: Date.now() });
+    log('写入 trips/vietnam-2026（成员 ' + Object.keys(settings.members || {}).length + ' 人，邀请码已生成）');
+  }
+  // 2. static content that used to live in the code (Firestore can't nest arrays: rows become objects)
+  const info = tripRef().collection('info').doc('static');
+  if ((await info.get()).exists) log('info/static 已存在，跳过');
+  else {
+    await info.set({
+      flights: window.TRIP_FLIGHTS, hotels: window.TRIP_HOTELS, transport: window.TRIP_TRANSPORT,
+      group: window.TRIP_GROUP.map(([k, label]) => ({ k, label })),
+      personal: window.TRIP_PERSONAL.map(([k, label]) => ({ k, label })),
+      checklistItems: window.TRIP_PERSONAL.map(([k, label]) => ({ k, label })),
+      phrases: window.TRIP_PHRASES.map(([vi, py, zh]) => ({ vi, py, zh })),
+      tips: window.TRIP_TIPS.map(([k, v]) => ({ k, v })),
+      sos: window.TRIP_SOS.map(([label, number, url]) => ({ label, number, ...(url ? { url } : {}) })),
+      packingItems: window.Packing.CATS.map(c => ({ id: c.id, label: c.label, icon: c.icon, items: c.items.map(([k, label, w, note, strong]) => ({ k, label, w, ...(note ? { note } : {}), ...(strong ? { strong: true } : {}) })) })),
+      at: Date.now() });
+    log('写入 info/static（航班、住宿、交通、常用语、小知识、紧急电话、清单）');
+  }
+  // 3. who is who
+  const { map, why } = await inferMembers(settings);
+  // 4. copy every collection (ids unchanged, existing docs skipped)
+  const written = {};
+  for (const c of OLD) {
+    const target = tripRef().collection(c), have = new Set((await target.get()).docs.map(d => d.id)), ops = [];
+    for (const d of await oldDocs(c)) {
+      if (have.has(d.id)) continue;
+      const data = d.data();
+      if (BY_MEMBER.includes(c) && data.by && map[data.by] && !('byMember' in data)) data.byMember = map[data.by];
+      ops.push({ ref: target.doc(d.id), data });
+    }
+    await writeAll(ops); written[c] = ops.length; log(`${c}：写入 ${ops.length}，跳过 ${have.size}`);
+  }
+  let wb = 0;
+  for (const p of await oldDocs('polls')) {
+    const target = tripRef().collection('polls').doc(p.id).collection('ballots'), have = new Set((await target.get()).docs.map(d => d.id)), ops = [];
+    for (const b of (await p.ref.collection('ballots').get()).docs) if (!have.has(b.id)) ops.push({ ref: target.doc(b.id), data: b.data() });
+    await writeAll(ops); wb += ops.length;
+  }
+  written['polls/ballots'] = wb; log(`polls/ballots：写入 ${wb}`);
+  // 5. every old device becomes a member of the trip (so it can still edit what it recorded)
+  const uids = new Set(Object.keys(map));
+  for (const c of ['expenses', 'settlements', 'links', 'days', 'polls']) for (const d of await oldDocs(c)) if (d.data().by) uids.add(d.data().by);
+  for (const c of ['people', 'votes', 'quiz']) for (const d of await oldDocs(c)) uids.add(d.id);
+  for (const d of await oldDocs('notes')) if (d.data().author) uids.add(d.data().author);
+  const memRef = tripRef().collection('members'), haveM = new Set((await memRef.get()).docs.map(d => d.id)), mops = [];
+  for (const uid of uids) if (!haveM.has(uid)) mops.push({ ref: memRef.doc(uid), data: { code: joinCode, member: map[uid] || null, at: Date.now() } });
+  await writeAll(mops); log(`members：新加入 ${mops.length} 台设备，已存在 ${haveM.size}`);
+  $('#mapRows').innerHTML = [...uids].map(u => `<tr><td><code>${esc(u.slice(0, 8))}…</code></td><td>${map[u] ? esc((settings.members || {})[map[u]] || map[u]) : '<span class="sub">推断不出</span>'}</td><td class="sub">${esc([...(why[u] || [])].join('、'))}</td></tr>`).join('');
+  $('#mapBox').hidden = false;
+  // 6. compare
+  const ok = showCounts(await counts(), written);
+  log(ok ? '—— 迁移完成，数量全部一致 ——' : '—— 迁移结束，但有集合数量不一致，请截图发给我 ——');
+  icons();
+}
+
+/* ---------- checklist templates ---------- */
+async function writeTemplates() {
+  const cats = window.Packing.CATS.map(c => ({ id: c.id, label: c.label, icon: c.icon, items: c.items.map(([k, label, w, note]) => ({ k, label, w, ...(note ? { note } : {}) })) }));
+  const pick = (ids, drop = []) => cats.filter(c => ids.includes(c.id)).map(c => ({ ...c, items: c.items.filter(i => !drop.includes(i.k)) }));
+  // trip-specific rows (跳岛当天, 大巴过夜, 1/1 跳岛 notes) stay out of the general templates
+  const strip = cs => cs.map(c => ({ ...c, items: c.items.map(({ note, ...i }) => (/\d+\/\d+|跳岛|芽庄|大巴/.test(note || '') ? i : { ...i, ...(note ? { note } : {}) })) }));
+  const T = {
+    base: { title: '所有旅行', packing: strip(pick(['docs', 'money', 'elec', 'toilet', 'meds'], ['seasick', 'vnd', 'homecash', 'evisa'])),
+      checklist: [{ k: 'passport', label: '护照有效期 6 个月以上' }, { k: 'visa', label: '签证 / 入境要求' }, { k: 'ticket', label: '机票已出票' }, { k: 'esim', label: 'eSIM / 流量' }, { k: 'cash', label: '换一些当地货币' }, { k: 'insurance', label: '旅行保险' }] },
+    beach: { title: '海岛 / 海边', packing: strip(pick(['clothes', 'toilet', 'meds'])), checklist: [] },
+    city: { title: '城市游', packing: [{ id: 'clothes', label: '衣物', icon: 'shirt', items: [{ k: 'tees', label: '换洗衣服', w: 'check' }, { k: 'jacket', label: '薄外套', w: 'carry' }, { k: 'umbrella', label: '雨衣或折叠伞', w: 'carry' }, { k: 'shoes', label: '舒服的鞋', w: 'check' }, { k: 'pajamas', label: '睡衣', w: 'check' }] },
+      { id: 'city', label: '城市', icon: 'train-front', items: [{ k: 'transitcard', label: '交通卡（悠游卡、T-money…）', w: 'carry' }, { k: 'tote', label: '购物袋', w: 'carry' }] }], checklist: [{ k: 'transit', label: '查好机场到市区的交通' }] },
+    cold: { title: '冬天', packing: [{ id: 'cold', label: '保暖', icon: 'snowflake', items: [{ k: 'downjacket', label: '羽绒服', w: 'carry' }, { k: 'heatpads', label: '暖宝宝', w: 'check' }, { k: 'moisturizer', label: '保湿霜、润唇膏', w: 'check' }, { k: 'gloves', label: '手套、围巾、帽子', w: 'check' }] }], checklist: [] },
+  };
+  const ops = [];
+  for (const [id, t] of Object.entries(T)) { const ref = db.collection('templates').doc(id); if (!(await ref.get()).exists) ops.push({ ref, data: { ...t, at: Date.now() } }); }
+  await writeAll(ops); log(`templates：写入 ${ops.length}（已存在的跳过）`);
+}
+</script>
+</body>
+</html>
