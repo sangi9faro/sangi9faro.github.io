@@ -24,6 +24,7 @@
 <script src="modules/money.js"></script>
 <script src="modules/packing.js"></script>
 <script src="modules/overview.js"></script>
+<script src="modules/cover.js"></script>
 <style>
 /* guide.html — layout and page-only pieces; tokens and shared components live in ui.css */
 html,body{height:100%}
@@ -111,6 +112,9 @@ body.g{overflow:hidden}
 .leg svg.lucide{width:14px;height:14px}
 /* map: route labels, city markers, plane, same-spot clusters, 看全程 */
 /* ---------- 总览: 下一步 · shortcuts · day strip · panels ---------- */
+.hero.cov-hero{position:relative;margin:4px 0 12px;padding:72px 16px 14px;border-radius:var(--r-l);overflow:hidden;color:#fff}
+.cov-hero::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 20%,rgba(0,0,0,.55))}
+.cov-hero>*{position:relative} .cov-hero h1{color:#fff} .cov-hero .subtitle{color:rgba(255,255,255,.88)!important}
 .ov-next{display:grid;gap:8px;padding:16px;margin:4px 0 10px;border-radius:var(--r-l);background:var(--accent-soft);color:var(--ink);text-decoration:none}
 .ov-next .k{margin:0;font-size:13px;font-weight:700;color:var(--accent)}
 .ov-next h2{display:flex;align-items:center;gap:8px;margin:0;font-size:20px;line-height:1.35}
@@ -266,7 +270,9 @@ function tripDays(t) {
 
 // names come from the trip (memberName)
 const n = id => esc(memberName(id) || id);
-function mountOverview() { if (!window.GuideOverview) return; GuideOverview.mount(contentEl); GuideOverview.afterRender(); }
+function mountOverview() {
+  // cover (trips/{id}/cover/main), loaded once Firebase is up (the first render can come before that)
+  if (window.__cover === undefined && window.firebase && firebase.apps.length) { window.__cover = null; TripCover.load(firebase.firestore(), Trip.id).then(d => { if (!d) return; window.__cover = d; const h = document.getElementById('ovHero'); if (h) h.setAttribute('style', TripCover.css({ id: Trip.id, ...(Trip.trip || {}) }, d)); }); } if (!window.GuideOverview) return; GuideOverview.mount(contentEl); GuideOverview.afterRender(); }
 const tripSubtitle = () => { const t = Trip.trip || {}, md = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : ''; return `${md(t.start)} – ${md(t.end)} · ${(t.route || []).join(' → ')}`; };
 // trip-specific notes (info/static.guideNotes: [{ title, text, url? }], {mN} = member names), folded
 function guideNotes() {
@@ -276,7 +282,7 @@ function guideNotes() {
 }
 function overviewContent() {
   return `
-<div class="hero"><h1>${esc((Trip.trip || {}).title || '')}攻略</h1><p class="subtitle">${esc(tripSubtitle())}</p></div>
+<div class="hero cov-hero" id="ovHero" style="${TripCover.css({ id: Trip.id, ...(Trip.trip || {}) }, window.__cover)}"><h1>${esc((Trip.trip || {}).title || '')}攻略</h1><p class="subtitle">${esc(tripSubtitle())}</p></div>
 ${window.GuideOverview ? GuideOverview.html() : ''}
 ${guideNotes()}
 <div class="section-head">图例</div>

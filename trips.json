@@ -41,7 +41,8 @@
       },
       "days": null,
       "notes": null,
-      "links": []
+      "links": [],
+      "moved": true
     },
     {
       "id": "taipei-2026",

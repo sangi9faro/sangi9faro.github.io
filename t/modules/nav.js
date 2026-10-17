@@ -52,6 +52,8 @@
          <button type="button" class="tn-edit" data-not-me><i data-lucide="user-x"></i>我不是${esc(members[me] || '这个人')}</button>`
       : `<p>我是谁（只存在这台设备上）</p>` + IDS.map(id => `<button type="button" role="menuitemradio" aria-checked="false" data-me="${id}"><span class="av sm" style="--p:var(--${id})">${esc(initial(id))}</span>${esc(members[id] || id)}</button>`).join('')
     menu.innerHTML += cfg.onEditNames ? `<hr><button type="button" class="tn-edit" data-edit-names><i data-lucide="users"></i>修改成员名字</button>` : '';
+    // owner-only entries (編辑旅行信息, 邀请): [{ label, icon, run }]
+    if (cfg.ownerItems && cfg.ownerItems.length) menu.innerHTML += '<hr>' + cfg.ownerItems.map((it, i) => `<button type="button" class="tn-edit" data-owner-item="${i}"><i data-lucide="${it.icon}"></i>${esc(it.label)}</button>`).join('');
 
     menu.hidden = false; btn && btn.setAttribute('aria-expanded', 'true'); icons();
     (menu.querySelector('[aria-checked="true"]') || menu.querySelector('button')).focus();
@@ -62,6 +64,7 @@
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.me) { if (b.dataset.me === me) { closeMenu(); return; } me = b.dataset.me; try { localStorage.setItem(ME_KEY, me); } catch (er) {} if (window.Trip) Trip.setMe(me); closeMenu(); drawMe(); cfg.onChange && cfg.onChange(me); }
     else if (b.dataset.editNames !== undefined) { closeMenu(); cfg.onEditNames(); }
+    else if (b.dataset.ownerItem !== undefined) { closeMenu(); cfg.ownerItems[+b.dataset.ownerItem].run(); }
     else if (b.dataset.notMe !== undefined) { me = ''; try { localStorage.removeItem(ME_KEY); } catch (er) {} if (window.Trip) Trip.setMe(''); drawMe(); cfg.onChange && cfg.onChange(''); openMenu(); }
   });
   document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); });

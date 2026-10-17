@@ -103,6 +103,18 @@
   .hero{min-height:400px}
   .hello{font-size:40px}
 }
+/* owner tools (sign in, ＋ new trip, ⋯ per card) */
+.owner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.owner .btn{min-height:36px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer}
+.cardwrap{position:relative}
+.cmenu-b{position:absolute;top:10px;right:10px;z-index:3;width:38px;height:38px;border:0;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center;cursor:pointer}
+.hero .cmenu-b,.cardwrap:has(.cd) .cmenu-b{top:auto;bottom:14px;right:14px}   /* keep clear of the countdown */
+.cardwrap:has(.cmenu-b) .hero .in{padding-right:52px}
+.tc+.cmenu-b{background:var(--surface-2);color:var(--ink)}
+.cmenu{position:fixed;z-index:2400;min-width:200px;padding:6px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow-2);border:1px solid var(--line);display:grid;gap:2px}
+.cmenu button{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--ink);font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+.cmenu button:hover{background:var(--surface-2)} .cmenu button.bad{color:var(--bad)}
 </style>
 </head>
 <body>
@@ -118,10 +130,11 @@
     <h1 class="hello" id="title">Faro 的旅行</h1>
     <div class="stats" id="stats"><div class="sk" style="width:220px;height:46px"></div></div>
     <a class="favline" id="favLine" href="favorites.html" hidden></a>
+    <div class="owner" id="owner"></div>
   </header>
 
   <section class="h-up" aria-labelledby="upT">
-    <div class="sec"><h2 id="upT">即将出发</h2></div>
+    <div class="sec"><h2 id="upT">即将出发</h2><button class="btn btn-sm btn-primary" id="newTrip" hidden><i data-lucide="plus" class="i18"></i>新建旅行</button></div>
     <div id="upcoming"><div class="sk sk-hero"></div></div>
   </section>
 
@@ -139,6 +152,11 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="t/modules/cover.js"></script>
+<script src="t/modules/countries.js"></script>
+<script src="t/modules/editor.js"></script>
+<script src="t/modules/invite.js"></script>
+<script src="t/modules/newtrip.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -153,8 +171,10 @@ const status = t => today < t.start ? 'planned' : today > t.end ? 'done' : 'now'
 const md = s => `${+s.slice(5, 7)}/${+s.slice(8)}`;
 const range = t => `${t.start.slice(0, 4)}.${md(t.start)} – ${md(t.end)}`;
 const target = t => (t.site && (t.site.guide || t.site.home)) || `trip.html?id=${encodeURIComponent(t.id)}`;
+const covers = {};   // tripId → cover data (trips/{id}/cover/main)
 const color = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0B7A8C';
-const bg = t => t.cover ? `background-image:url('${encodeURI(t.cover)}')` : `background:${color(t.color)}`;
+const bg = t => TripCover.css(t, covers[t.id]);
+const photo = t => TripCover.hasPhoto(t, covers[t.id]);
 
 /* theme toggle (shared across all pages via localStorage) */
 function syncThemeBtn() { const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
@@ -208,9 +228,10 @@ function render(data) {
     const st = status(t), n = Math.round((new Date(t.start + 'T00:00:00') - new Date(today + 'T00:00:00')) / DAY);
     const cd = st === 'now' ? `<b>第 ${Math.round((new Date(today) - new Date(t.start)) / DAY) + 1} 天</b><span>旅行中</span>` : `<b>${n}</b><span>天后出发</span>`;
     const site = t.site || {}, acts = [['攻略', site.guide, 'book-open'], ['工具箱', site.home, 'briefcase'], ['投票', site.vote, 'vote']].filter(a => a[1]);
-    return `<a class="hero" data-trip="${esc(t.id)}" href="${esc(target(t))}" style="${bg(t)}">
+    return `<div class="cardwrap"><a class="hero" data-trip="${esc(t.id)}" href="${esc(target(t))}" style="${bg(t)}">
         <span class="pill ${st}"><i></i>${st === 'now' ? '进行中' : '计划中'}</span><span class="cd num">${cd}</span>
         <div class="in"><h3>${esc(t.title)}</h3><div class="meta"><span class="num">${range(t)} · ${days(t)} 天</span><span>${(t.route || []).map(esc).join(' → ')}</span>${t.members ? `<span>${t.members} 人</span>` : ''}</div></div></a>
+      ${OWNER_MODE && t.fs ? `<button class="cmenu-b" data-cmenu="${esc(t.id)}" aria-label="${esc(t.title)} 的更多操作"><i data-lucide="ellipsis"></i></button>` : ''}</div>
       ${acts.length ? `<div class="acts">${acts.map(([l, h, ic]) => `<a class="btn btn-sm" href="${esc(h)}"><i data-lucide="${ic}" class="i18"></i>${l}</a>`).join('')}</div>` : '<div style="height:18px"></div>'}`;
   }).join('') : `<div class="empty card"><i data-lucide="plane-takeoff"></i>暂时没有计划中的旅行。<a class="btn btn-sm" href="https://github.com/sangi9faro/sangi9faro.github.io/edit/main/trips.json" target="_blank" rel="noopener">在 trips.json 里加一条</a></div>`;
 
@@ -219,8 +240,8 @@ function render(data) {
   if (!done.length) $('#records').innerHTML = `<div class="empty card"><i data-lucide="notebook-pen"></i>还没有记录。在 trips.json 里加一条就会出现在这里。<a class="btn btn-sm" href="https://github.com/sangi9faro/sangi9faro.github.io/edit/main/trips.json" target="_blank" rel="noopener">编辑 trips.json</a></div>`;
   else { let h = '', yr = '';
     done.forEach(t => { const y = t.end.slice(0, 4); if (y !== yr) { if (yr) h += '</div>'; yr = y; h += `<div class="year">${y}</div><div class="grid">`; }
-      h += `<a class="tc card" data-trip="${esc(t.id)}" href="${esc(target(t))}"><div class="th" style="${bg(t)}">${t.cover ? '' : esc((t.title || '').slice(0, 2))}</div>
-        <div class="tx"><h3>${esc(t.title)}</h3><div class="m num">${range(t)} · ${days(t)} 天</div><div class="m">${esc(t.country || '')}${t.members ? ` · ${t.members} 人` : ''}</div></div></a>`; });
+      h += `<div class="cardwrap"><a class="tc card" data-trip="${esc(t.id)}" href="${esc(target(t))}"><div class="th" style="${bg(t)}">${photo(t) ? '' : esc(t.country || (t.title || '').slice(0, 2))}</div>
+        <div class="tx"><h3>${esc(t.title)}</h3><div class="m num">${range(t)} · ${days(t)} 天</div><div class="m">${esc(t.country || '')}${t.members ? ` · ${t.members} 人` : ''}</div></div></a>${OWNER_MODE && t.fs ? `<button class="cmenu-b" data-cmenu="${esc(t.id)}" aria-label="${esc(t.title)} 的更多操作"><i data-lucide="ellipsis"></i></button>` : ''}</div>`; });
     $('#records').innerHTML = h + '</div>'; }
 
   document.querySelectorAll('[data-trip]').forEach(el => { el.addEventListener('mouseenter', () => hl(el.dataset.trip, true)); el.addEventListener('mouseleave', () => hl(el.dataset.trip, false)); });
@@ -228,21 +249,97 @@ function render(data) {
   buildMap(trips);
 }
 
-// public favourites count (no sign-in needed: rules let anyone read non-private docs)
+// ---------- data: trips from Firestore (visitors: trips anyone with the link may see; the owner: all) ----------
+// trips.json is still read for trips not in Firestore yet (and as a fallback when Firestore can't be reached)
+const OWNER = 'X8BxRGYdemf6Wwb9MtQcLAxpy5q2';
+const EMU = !/github\.io$/.test(location.hostname) && (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || new URLSearchParams(location.search).has('emu'));
+let OWNER_MODE = false, fsDb = null, fsTrips = {}, legacy = { trips: [] };
 function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+let fbReady = null;
+function firebaseUp() {
+  if (fbReady) return fbReady;
+  fbReady = (async () => {
+    const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+    if (EMU && !window.__emu) { window.__emu = 1; firebase.auth().useEmulator('http://127.0.0.1:9199', { disableWarnings: true }); firebase.firestore().useEmulator('127.0.0.1', 8080); }
+    return firebase.firestore();
+  })();
+  return fbReady;
+}
 async function publicFavs(filter) {
-  const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
-  if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
-  let q = firebase.firestore().collection('favorites').where('private', '==', false);
+  const db = await firebaseUp();
+  let q = db.collection('favorites').where('private', '==', false);
   if (filter) q = q.where('tripId', '==', filter);
   return (await q.get()).docs.map(d => ({ id: d.id, ...d.data() }));
 }
 publicFavs().then(fs => { const l = $('#favLine'); l.innerHTML = `<i data-lucide="heart" class="i18"></i>收藏了 <span class="num">${fs.length}</span> 个地方 ›`; l.hidden = false; icons(l); }).catch(() => {});
 
+const asCard = (id, t) => ({ ...t, id, fs: true, members: Object.keys(t.members || {}).length || null,
+  site: { guide: `/t/guide.html?id=${encodeURIComponent(id)}`, home: `/t/?id=${encodeURIComponent(id)}#tools`, vote: (t.modules || {}).vote ? `/t/vote.html?id=${encodeURIComponent(id)}` : null } });
+function draw() {
+  const list = Object.entries(fsTrips).map(([id, t]) => asCard(id, t));
+  for (const t of legacy.trips || []) if (!t.moved && !fsTrips[t.id]) list.push(t);   // trips.json entries not moved to Firestore yet (moved ones are only kept for favorites.html)
+  if (map) { map.remove(); map = null; }
+  render({ owner: legacy.owner, trips: list });
+  // covers arrive after the cards: swap the backgrounds in place
+  for (const t of list.filter(x => x.fs && !(x.id in covers))) {
+    covers[t.id] = null;
+    TripCover.load(fsDb, t.id).then(d => { if (!d) return; covers[t.id] = d;
+      document.querySelectorAll(`[data-trip="${CSS.escape(t.id)}"]`).forEach(el => { const box = el.classList.contains('hero') ? el : el.querySelector('.th'); if (box) { box.setAttribute('style', bg(t)); if (box.classList.contains('th')) box.textContent = ''; } }); });
+  }
+}
+async function loadTrips() {
+  const db = await firebaseUp(); fsDb = db;
+  const q = OWNER_MODE ? db.collection('trips') : db.collection('trips').where('visibility', '==', 'link');
+  const snap = await q.get(); fsTrips = {}; snap.docs.forEach(d => { fsTrips[d.id] = d.data(); });
+  draw();
+}
+
+/* ---------- owner: sign in, new trip, ⋯ menu ---------- */
+function drawOwner(user) {
+  const el = $('#owner');
+  el.innerHTML = OWNER_MODE ? `<span>已登录（旅行主人）</span><button class="linkbtn" id="signOut">退出</button>`
+    : `<button class="linkbtn" id="signIn"><i data-lucide="log-in" class="i18"></i> 主人登录</button>`;
+  $('#newTrip').hidden = !OWNER_MODE; icons(el);
+}
+function menuFor(id, x, y) {
+  document.querySelectorAll('.cmenu').forEach(m => m.remove());
+  const t = fsTrips[id]; if (!t) return;
+  const m = document.createElement('div'); m.className = 'cmenu'; m.setAttribute('role', 'menu');
+  m.innerHTML = `<button data-act="edit"><i data-lucide="pencil"></i>编辑</button><button data-act="invite"><i data-lucide="user-plus"></i>邀请（二维码）</button>
+    <button data-act="copy"><i data-lucide="link"></i>复制邀请链接</button><button data-act="del" class="bad"><i data-lucide="trash-2"></i>删除</button>`;
+  document.body.appendChild(m); icons(m);
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px'; m.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px';
+  m.querySelector('button').focus();
+  m.addEventListener('click', async e => {
+    const a = e.target.closest('[data-act]'); if (!a) return; m.remove();
+    if (a.dataset.act === 'edit') TripEditor.edit({ fs: fsDb, tripId: id, trip: t, onSaved: (nt, cover) => { fsTrips[id] = nt; if (cover) covers[id] = cover.data; draw(); } });
+    if (a.dataset.act === 'invite') TripInvite.open({ fs: fsDb, tripId: id, trip: t, onChanged: code => { t.joinCode = code; } });
+    if (a.dataset.act === 'copy') TripEditor.toast((await TripInvite.copy(TripInvite.linkFor(id, t.joinCode))) ? '邀请链接已复制' : TripInvite.linkFor(id, t.joinCode));
+    if (a.dataset.act === 'del') TripEditor.remove({ fs: fsDb, tripId: id, trip: t, onDeleted: () => { delete fsTrips[id]; draw(); } });
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-cmenu]'); if (b) { e.preventDefault(); const r = b.getBoundingClientRect(); menuFor(b.dataset.cmenu, r.left - 160, r.bottom + 6); return; }
+  if (!e.target.closest('.cmenu')) document.querySelectorAll('.cmenu').forEach(m => m.remove());
+  if (e.target.closest('#signIn')) (EMU ? firebase.auth().signInWithEmailAndPassword('owner@example.com', 'emulator-only') : firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())).catch(er => TripEditor.toast('登录失败：' + er.message));
+  if (e.target.closest('#signOut')) firebase.auth().signOut();
+  if (e.target.closest('#newTrip')) TripNew.open({ fs: fsDb, uid: firebase.auth().currentUser.uid, onCreated: id => { location.href = `/t/guide.html?id=${encodeURIComponent(id)}`; } });
+});
+// right-click (desktop) or long-press (phone) on an owner's card opens the same menu
+document.addEventListener('contextmenu', e => { const c = e.target.closest('[data-trip]'); if (OWNER_MODE && c && fsTrips[c.dataset.trip]) { e.preventDefault(); menuFor(c.dataset.trip, e.clientX, e.clientY); } });
+let pressT = 0;
+document.addEventListener('touchstart', e => { const c = e.target.closest('[data-trip]'); if (!OWNER_MODE || !c || !fsTrips[c.dataset.trip]) return; const t0 = e.touches[0];
+  pressT = setTimeout(() => { menuFor(c.dataset.trip, t0.clientX, t0.clientY); c.addEventListener('click', ev => ev.preventDefault(), { once: true, capture: true }); }, 600); }, { passive: true });
+['touchend', 'touchmove', 'touchcancel'].forEach(n => document.addEventListener(n, () => clearTimeout(pressT), { passive: true }));
+
 icons(document);
-fetch('trips.json', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(render)
-  .catch(() => { $('#stats').innerHTML = '<span class="err">trips.json 读取失败，检查一下文件格式。</span>'; });
+fetch('trips.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { trips: [] }).catch(() => ({ trips: [] })).then(d => { legacy = d; draw(); });
+firebaseUp().then(() => firebase.auth().onAuthStateChanged(u => {
+  OWNER_MODE = !!u && u.uid === OWNER; drawOwner(u);
+  loadTrips().catch(() => { draw(); });
+})).catch(() => { $('#owner').innerHTML = ''; });
 </script>
 </body>
 </html>

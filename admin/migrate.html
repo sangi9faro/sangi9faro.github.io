@@ -58,6 +58,12 @@ td.n{font:700 14px var(--font-num);text-align:right} th.n{text-align:right}
       <table class="map"><thead><tr><th>设备</th><th>成员</th><th>依据</th></tr></thead><tbody id="mapRows"></tbody></table></div>
     <pre class="log" id="log"></pre>
   </section>
+
+  <section class="card" id="importCard" hidden>
+    <h2><i data-lucide="file-input"></i>从 trips.json 导入行程</h2>
+    <p class="sub">先在主页用「新建旅行」建好旅行（id 要和 trips.json 里的一样），再把 trips.json 里写好的按天行程和航班导入进去。已经有地点的天和已有的航班不会被覆盖。</p>
+    <div class="row"><select id="impTrip" aria-label="要导入的旅行"></select><button class="btn btn-primary" id="impRun"><i data-lucide="download" class="i18"></i>导入</button></div>
+  </section>
 </main>
 
 <script>
@@ -87,13 +93,15 @@ let db, auth;
   auth.onAuthStateChanged(u => {
     const owner = u && u.uid === OWNER;
     $('#authState').innerHTML = !u ? '还没登录。' : owner ? `已登录：<span class="who">${esc(u.email || u.uid)}</span>（旅行主人）` : `当前账号不是旅行主人（${esc(u.email || u.uid)}），不能迁移。`;
-    $('#loginGoogle').hidden = !!owner || EMU; $('#loginEmu').hidden = !!owner || !EMU; $('#runCard').hidden = !owner; icons();
+    $('#loginGoogle').hidden = !!owner || EMU; $('#loginEmu').hidden = !!owner || !EMU; $('#runCard').hidden = !owner; $('#importCard').hidden = !owner; icons();
+    if (owner) fillImport();
   });
   $('#loginGoogle').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => log('登录失败：' + e.message));
   $('#loginEmu').onclick = () => auth.signInWithEmailAndPassword('owner@example.com', 'emulator-only').catch(e => log('模拟器登录失败：' + e.message));
   $('#run').onclick = () => guard(migrate);
   $('#verify').onclick = () => guard(async () => showCounts(await counts(), {}));
   $('#templates').onclick = () => guard(writeTemplates);
+  $('#impRun').onclick = () => guard(importDays);
   icons();
 })();
 async function guard(fn) {
@@ -216,6 +224,34 @@ async function migrate() {
   const ok = showCounts(await counts(), written);
   log(ok ? '—— 迁移完成，数量全部一致 ——' : '—— 迁移结束，但有集合数量不一致，请截图发给我 ——');
   icons();
+}
+
+/* ---------- import days + flights from trips.json into an existing trip ---------- */
+let legacyTrips = [];
+async function fillImport() {
+  try { legacyTrips = ((await (await fetch('../trips.json', { cache: 'no-cache' })).json()).trips || []).filter(t => Array.isArray(t.days) && t.days.length); } catch (e) { legacyTrips = []; }
+  $('#impTrip').innerHTML = legacyTrips.map(t => `<option value="${esc(t.id)}">${esc(t.title)}（${esc(t.id)}）</option>`).join('') || '<option value="">trips.json 里没有带行程的旅行</option>';
+}
+async function importDays() {
+  const id = $('#impTrip').value, src = legacyTrips.find(t => t.id === id); if (!src) return log('没有可导入的旅行');
+  const T = db.doc('trips/' + id), trip = await T.get();
+  if (!trip.exists) return log(`trips/${id} 还不存在：先在主页用「新建旅行」建好，id 填 ${id}`);
+  const COLORS = ['#E8613C', '#2E8B57', '#C2397A', '#0B7A8C', '#7B5BC9', '#3A6FD8'];
+  let wrote = 0, kept = 0;
+  for (const [i, d] of src.days.entries()) {
+    const ref = T.collection('days').doc('d' + (i + 1)), cur = await ref.get();
+    if (cur.exists && (cur.data().locations || []).length) { kept++; continue; }
+    const locations = (d.locations || []).map((l, k) => Object.fromEntries(Object.entries({ id: `i${i + 1}${k}`, name: l.name, lat: l.lat, lng: l.lng, type: l.type || 'spot', time: l.time || '', desc: l.desc || '' }).filter(([, v]) => v !== undefined && v !== '')));
+    await ref.set({ label: d.label || 'D' + (i + 1), date: d.date || '', title: d.title || '', color: COLORS[i % 6], locations, rev: ((cur.exists && cur.data().rev) || 0) + 1, who: '', by: auth.currentUser.uid, at: Date.now() });
+    wrote++;
+  }
+  const info = T.collection('info').doc('static'), cur = (await info.get()).data() || {};
+  let fl = 0;
+  if (!(cur.flights || []).length && (src.flights || []).length) {
+    const flights = src.flights.map(f => ({ who: 'm1', dir: f.dir || 'in', airline: f.airline || null, no: f.no || null, from: f.from || null, to: f.to || null, dep: f.dep || null, arr: f.arr || null, status: f.status || 'ticketed' }));
+    await info.set({ flights }, { merge: true }); fl = flights.length;
+  }
+  log(`${id}：写入 ${wrote} 天，保留已有 ${kept} 天，航班 ${fl} 班`);
 }
 
 /* ---------- checklist templates ---------- */

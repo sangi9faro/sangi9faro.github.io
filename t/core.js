@@ -70,6 +70,16 @@
     window.TRIP_PACKING = rows(info.packingItems, c => ({ id: c.id, label: c.label, icon: c.icon, items: rows(c.items, i => [i.k, i.label, i.w, i.note, i.strong ? 1 : 0]) }));
   }
 
+  // the owner gets 编辑旅行信息 / 邀请 in the avatar menu (modules loaded only for them)
+  async function ownerTools(fs) {
+    try { for (const m of ['cover', 'countries', 'editor', 'invite']) if (!document.querySelector(`script[src="modules/${m}.js"]`)) await loadScript(`modules/${m}.js`); } catch (e) { return; }
+    const items = [
+      { label: '编辑旅行信息', icon: 'pencil', run: () => TripEditor.edit({ fs, tripId: id, trip: Trip.trip, onSaved: () => location.reload() }) },
+      { label: '邀请同行的人', icon: 'user-plus', run: () => TripInvite.open({ fs, tripId: id, trip: Trip.trip }) },
+    ];
+    if (window.tripNav) tripNav.configure({ ownerItems: items });
+    if (!document.querySelector('.tn-me:not([hidden])') && window.tripNav) tripNav.configure({ members: (Trip.trip || {}).members || {} });
+  }
   async function start() {
     if (!id) { screen('找不到这次旅行', '链接里缺少旅行 id。请从「我的旅行」首页重新打开。', '<a class="btn" href="/">回到我的旅行</a>'); throw new Error('no trip id'); }
     const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
@@ -112,6 +122,7 @@
     if (!Trip.canEdit) document.body.insertAdjacentHTML('afterbegin', '<div class="trip-ro" role="note">只读：用邀请链接加入这次旅行以后才能编辑</div>');
     document.body.classList.toggle('trip-readonly', !Trip.canEdit);   // hides write-only controls (ui.css)
     tripRef.onSnapshot(s => { if (!s.exists) return; Trip.trip = s.data(); listeners.forEach(cb => cb(Trip.trip)); }, () => {});
+    if (Trip.isOwner) ownerTools(fs);
     if (window.tripNav) {
       tripNav.configure({ members: trip.members || {}, modules: trip.modules || {}, title: trip.title });
       if (joinedNow || (Trip.isMember && !Trip.me)) setTimeout(() => tripNav.openPicker(), 400);
