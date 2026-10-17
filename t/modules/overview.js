@@ -150,7 +150,7 @@
     if (k === 'flights') return openSheet('航班', '<div id="gshFlights"></div>', b => window.renderFlights && renderFlights(b.querySelector('#gshFlights'), { name: id => memberName(id) || id }));
     if (k === 'hotels') return openSheet('住宿', (window.TRIP_HOTELS || []).map(h => { const no = h.task ? !groupDone(h.task) : h.booked === false;   // Vietnam: group-checklist task; imported trips: booked flag
       return `<div class="gsh-item"><span class="pill">${esc(h.when)}</span>${no ? '<span class="tag warn">未订</span>' : '<span class="tag ok">已订</span>'}
-        <b>${esc(h.name)}</b>${h.addr ? `<span class="muted">${esc(h.addr)}</span>` : ''}${h.note ? `<span class="sub">${esc(h.note).replace(/\{(m\d)\}/g, (_, id) => nm(id))}</span>` : ''}
+        <b>${esc(h.name)}</b>${h.room ? `<span>${esc(h.room)}</span>` : ''}${h.addr ? `<span class="muted">${esc(h.addr)}</span>` : ''}${h.note ? `<span class="sub">${esc(h.note).replace(/\{(m\d)\}/g, (_, id) => nm(id))}</span>` : ''}${(h.tips || []).length ? `<ul class="h-tips">${h.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
         <div class="row"><a class="btn btn-sm" href="${mapLink(h.q || h.name)}" target="_blank" rel="noopener"><i data-lucide="navigation" class="i18"></i>Google Maps</a><button type="button" class="btn btn-sm" data-ovday="${h.day}">看 D${h.day}</button></div></div>`; }).join(''));
     if (k === 'transport') return openSheet('交通', (window.TRIP_TRANSPORT || []).map(x => `<div class="gsh-item"><span class="tag ${groupDone(x.task) ? 'ok">已订' : 'warn">待订'}</span>
         <b><i data-lucide="${x.icon}" class="i18"></i>${esc(x.title)}</b><span class="muted">${esc(x.when)}</span><span class="sub">${esc(x.note)}</span>

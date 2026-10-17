@@ -684,7 +684,7 @@ function renderCountdown() {
 function renderInfo() {
   if (window.tripNav) tripNav.setMembers(settings.members || DEFAULT_SETTINGS.members);
   renderFlights($("#flights"), { name: nm });
-  $("#hotels").innerHTML = HOTELS.map(h => `<div class="flight"><span class="pill">${h.when}</span><b>${h.name}</b>${h.addr ? `<span class="muted">${h.addr}</span>` : ""}${h.note ? `<span>${h.note.replace(/\{(m\d)\}/g, (_, id) => esc(nm(id)))}</span>` : ""}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.q)}" target="_blank" rel="noopener"><i data-lucide="navigation" class="i18"></i>Google Maps 导航</a></div>`).join("");
+  $("#hotels").innerHTML = HOTELS.map(h => `<div class="flight"><span class="pill">${h.when}</span><b>${esc(h.name)}</b>${h.room ? `<span>${esc(h.room)}</span>` : ""}${h.addr ? `<span class="muted">${esc(h.addr)}</span>` : ""}${h.note ? `<span>${esc(h.note).replace(/\{(m\d)\}/g, (_, id) => esc(nm(id)))}</span>` : ""}${(h.tips || []).length ? `<ul class="h-tips">${h.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.q)}" target="_blank" rel="noopener"><i data-lucide="navigation" class="i18"></i>Google Maps 导航</a></div>`).join("");
   const when = settings.ratesAt ? new Date(settings.ratesAt).toLocaleDateString("zh-CN") : "默认估算";
   const others = Trip.currencies().filter(c => c !== "CNY");
   const line = others.length ? `1 元人民币 ≈ ${others.map(c => `${fmt(rate(c), c)} ${Trip.CUR_NAME[c] || c}`).join(" ≈ ")}（${when}）` : "这次旅行只用人民币";

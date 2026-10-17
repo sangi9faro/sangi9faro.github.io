@@ -254,7 +254,7 @@ async function importDays() {
   }
   let ho = 0;
   if (!(cur.hotels || []).length && (src.hotels || []).length) {
-    const hotels = src.hotels.map(h => Object.fromEntries(Object.entries({ when: h.when || '', name: h.name || '', day: h.day, addr: h.addr, note: h.note, q: h.q, booked: h.booked !== false }).filter(([, v]) => v !== undefined)));
+    const hotels = src.hotels.map(h => Object.fromEntries(Object.entries({ when: h.when || '', name: h.name || '', day: h.day, room: h.room, addr: h.addr, note: h.note, tips: h.tips, q: h.q, booked: h.booked !== false }).filter(([, v]) => v !== undefined)));
     await info.set({ hotels }, { merge: true }); ho = hotels.length;
   }
   log(`${id}：写入 ${wrote} 天，保留已有 ${kept} 天，航班 ${fl} 班，住宿 ${ho} 条`);
