@@ -22,11 +22,12 @@
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
 /* index.html — layout only; tokens and shared components live in ui.css */
-.h{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "up" "map" "rec";gap:0 24px;padding:calc(18px + var(--safe-t)) 16px calc(96px + var(--safe-b));max-width:1600px;margin:0 auto}
+.h{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "up" "budget" "map" "rec";gap:0 24px;padding:calc(18px + var(--safe-t)) 16px calc(96px + var(--safe-b));max-width:1600px;margin:0 auto}
 .h-head{grid-area:head}
 .h-up{grid-area:up}
 .h-mapcol{grid-area:map}
 .h-rec{grid-area:rec}
+.h-budget{grid-area:budget}
 /* side nav: bottom tab bar on phones */
 .h-side{position:fixed;left:0;right:0;bottom:0;z-index:900;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
   border-top:1px solid var(--line);padding:6px 16px calc(6px + var(--safe-b));display:flex;justify-content:space-around}
@@ -79,7 +80,7 @@
 .credit a{text-decoration:underline;color:var(--ink-2)}
 /* tablet + desktop: side nav | content | sticky full-height map */
 @media (min-width:768px){
-  .h{grid-template-columns:200px minmax(0,1.4fr) minmax(0,1fr);grid-template-areas:"side head map" "side up map" "side rec map";align-items:start;padding:28px 24px 40px 0;max-width:1600px}
+  .h{grid-template-columns:200px minmax(0,1.4fr) minmax(0,1fr);grid-template-areas:"side head map" "side up map" "side budget map" "side rec map";align-items:start;padding:28px 24px 40px 0;max-width:1600px}
   .h-side{position:sticky;top:0;grid-area:side;align-self:start;height:100dvh;flex-direction:column;justify-content:flex-start;gap:4px;border-top:0;border-right:1px solid var(--line);
     background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;padding:24px 14px;margin-top:-28px}
   .h-side .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;padding:0 8px 18px}
@@ -87,7 +88,7 @@
   .nav-i{flex-direction:row;justify-content:flex-start;gap:10px;font-size:15px;padding:0 12px;min-height:44px;color:var(--ink)}
   .nav-i[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
   .h-side .theme{display:flex;margin-top:auto}
-  .h-mapcol{position:sticky;top:0;grid-row:1/4;padding-top:2px}
+  .h-mapcol{position:sticky;top:0;grid-row:1/5;padding-top:2px}
   .h-mapcol .sec{margin-top:0}
   .mapcard{height:calc(100dvh - 96px)}
   .mapbtn{display:none}
@@ -138,6 +139,11 @@
     <div id="upcoming"><div class="sk sk-hero"></div></div>
   </section>
 
+  <section class="h-budget" id="budgetSec" aria-labelledby="bdT" hidden>
+    <div class="sec"><h2 id="bdT">预算</h2></div>
+    <div class="bd-list"></div>
+  </section>
+
   <section class="h-mapcol" aria-label="足迹地图">
     <div class="sec" id="mapSec"><h2>足迹</h2></div>
     <div class="mapcard card" id="mapcard"><div id="map"></div>
@@ -158,6 +164,8 @@
 <script src="t/modules/editor.js"></script>
 <script src="t/modules/invite.js"></script>
 <script src="t/modules/newtrip.js"></script>
+<script src="t/modules/money.js"></script>
+<script src="t/modules/budget.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -339,6 +347,8 @@ icons(document);
 fetch('trips.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { trips: [] }).catch(() => ({ trips: [] })).then(d => { legacy = d; draw(); });
 firebaseUp().then(() => firebase.auth().onAuthStateChanged(u => {
   OWNER_MODE = !!u && u.uid === OWNER; drawOwner(u);
+  if (OWNER_MODE) window.__budget ? window.__budget.refresh() : (window.__budget = TripBudget.mount($('#budgetSec'), { fs: firebase.firestore() }));
+  if (!OWNER_MODE) $('#budgetSec').hidden = true;
   loadTrips().catch(() => { draw(); });
 })).catch(() => { $('#owner').innerHTML = ''; });
 </script>
