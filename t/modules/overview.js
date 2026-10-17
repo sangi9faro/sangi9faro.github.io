@@ -78,7 +78,7 @@
   const groupDone = k => !!(data.group[k] || {}).done;
   function status() {
     const fl = window.TRIP_FLIGHTS || [], people = new Set(fl.map(f => f.who)).size, pend = fl.filter(f => f.status !== 'ticketed').length;
-    const hotels = window.TRIP_HOTELS || [], unbooked = hotels.filter(h => h.task && !groupDone(h.task)).length;
+    const hotels = window.TRIP_HOTELS || [], unbooked = hotels.filter(h => h.task ? !groupDone(h.task) : h.booked === false).length;
     const tr = (window.TRIP_TRANSPORT || []).filter(x => !groupDone(x.task)).length;
     const H = window.TRIP_HIGHLIGHT, re = H && H.match ? new RegExp(H.match) : null;
     const hd = H ? mainOf(DAYS.find(d => d.id === H.day)) : [], nye = re ? (hd.find(l => re.test(l.name)) || hd.find(l => re.test(l.desc || ''))) : null;   // name first: other stops mention it in passing
@@ -148,7 +148,7 @@
   const mapLink = q => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
   function panel(k) {
     if (k === 'flights') return openSheet('航班', '<div id="gshFlights"></div>', b => window.renderFlights && renderFlights(b.querySelector('#gshFlights'), { name: id => memberName(id) || id }));
-    if (k === 'hotels') return openSheet('住宿', (window.TRIP_HOTELS || []).map(h => { const no = h.task && !groupDone(h.task);
+    if (k === 'hotels') return openSheet('住宿', (window.TRIP_HOTELS || []).map(h => { const no = h.task ? !groupDone(h.task) : h.booked === false;   // Vietnam: group-checklist task; imported trips: booked flag
       return `<div class="gsh-item"><span class="pill">${esc(h.when)}</span>${no ? '<span class="tag warn">未订</span>' : '<span class="tag ok">已订</span>'}
         <b>${esc(h.name)}</b>${h.addr ? `<span class="muted">${esc(h.addr)}</span>` : ''}${h.note ? `<span class="sub">${esc(h.note).replace(/\{(m\d)\}/g, (_, id) => nm(id))}</span>` : ''}
         <div class="row"><a class="btn btn-sm" href="${mapLink(h.q || h.name)}" target="_blank" rel="noopener"><i data-lucide="navigation" class="i18"></i>Google Maps</a><button type="button" class="btn btn-sm" data-ovday="${h.day}">看 D${h.day}</button></div></div>`; }).join(''));

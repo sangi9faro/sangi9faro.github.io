@@ -248,10 +248,16 @@ async function importDays() {
   const info = T.collection('info').doc('static'), cur = (await info.get()).data() || {};
   let fl = 0;
   if (!(cur.flights || []).length && (src.flights || []).length) {
-    const flights = src.flights.map(f => ({ who: 'm1', dir: f.dir || 'in', airline: f.airline || null, no: f.no || null, from: f.from || null, to: f.to || null, dep: f.dep || null, arr: f.arr || null, status: f.status || 'ticketed' }));
+    const flights = src.flights.map(f => ({ who: 'm1', dir: f.dir || 'in', airline: f.airline || null, no: f.no || null, from: f.from || null, to: f.to || null, dep: f.dep || null, arr: f.arr || null, status: f.status || 'ticketed',
+      ...(f.approx ? { approx: f.approx, approxLabel: f.approxLabel || '' } : {}) }));
     await info.set({ flights }, { merge: true }); fl = flights.length;
   }
-  log(`${id}：写入 ${wrote} 天，保留已有 ${kept} 天，航班 ${fl} 班`);
+  let ho = 0;
+  if (!(cur.hotels || []).length && (src.hotels || []).length) {
+    const hotels = src.hotels.map(h => Object.fromEntries(Object.entries({ when: h.when || '', name: h.name || '', day: h.day, addr: h.addr, note: h.note, q: h.q, booked: h.booked !== false }).filter(([, v]) => v !== undefined)));
+    await info.set({ hotels }, { merge: true }); ho = hotels.length;
+  }
+  log(`${id}：写入 ${wrote} 天，保留已有 ${kept} 天，航班 ${fl} 班，住宿 ${ho} 条`);
 }
 
 /* ---------- checklist templates ---------- */
