@@ -8,11 +8,27 @@
       "end": "2027-01-03",
       "country": "越南",
       "countryCode": "VN",
-      "route": ["胡志明", "芽庄", "金兰湾"],
+      "route": [
+        "胡志明",
+        "芽庄",
+        "金兰湾"
+      ],
       "places": [
-        { "name": "胡志明", "lat": 10.7769, "lng": 106.7009 },
-        { "name": "芽庄", "lat": 12.2388, "lng": 109.1967 },
-        { "name": "金兰湾", "lat": 12.05, "lng": 109.208 }
+        {
+          "name": "胡志明",
+          "lat": 10.7769,
+          "lng": 106.7009
+        },
+        {
+          "name": "芽庄",
+          "lat": 12.2388,
+          "lng": 109.1967
+        },
+        {
+          "name": "金兰湾",
+          "lat": 12.05,
+          "lng": 109.208
+        }
       ],
       "members": 4,
       "cover": "img/vietnam-2026.jpg",
@@ -30,15 +46,43 @@
     {
       "id": "taipei-2026",
       "title": "台北圣诞行",
-      "start": "2026-12-25",
+      "start": "2026-12-24",
       "end": "2026-12-29",
       "country": "台湾",
       "countryCode": "TW",
-      "route": ["台北", "九份", "十分"],
+      "route": [
+        "台北",
+        "十分",
+        "九份",
+        "北投",
+        "淡水"
+      ],
       "places": [
-        { "name": "台北", "lat": 25.0478, "lng": 121.5170 },
-        { "name": "十分", "lat": 25.0426, "lng": 121.7766 },
-        { "name": "九份", "lat": 25.1086, "lng": 121.8444 }
+        {
+          "name": "台北",
+          "lat": 25.0478,
+          "lng": 121.517
+        },
+        {
+          "name": "十分",
+          "lat": 25.0412,
+          "lng": 121.7754
+        },
+        {
+          "name": "九份",
+          "lat": 25.1097,
+          "lng": 121.8452
+        },
+        {
+          "name": "北投",
+          "lat": 25.1372,
+          "lng": 121.5083
+        },
+        {
+          "name": "淡水",
+          "lat": 25.1699,
+          "lng": 121.4398
+        }
       ],
       "members": null,
       "cover": "img/taipei-2026.jpg",
@@ -49,9 +93,191 @@
         "guide": "/taipei/",
         "vote": null
       },
-      "days": null,
+      "days": [
+        {
+          "label": "D1",
+          "date": "12/24 周四",
+          "title": "到台北 · 平安夜",
+          "locations": [
+            {
+              "name": "松山机场",
+              "lat": 25.0694,
+              "lng": 121.5525,
+              "type": "transport",
+              "time": "12:50",
+              "desc": "ZE887 从金浦飞来，松山 T1 落地，捷运文湖线进市区。"
+            },
+            {
+              "name": "入住酒店",
+              "type": "hotel",
+              "time": "下午",
+              "desc": "酒店待定。"
+            },
+            {
+              "name": "新北欢乐耶诞城（板桥）",
+              "lat": 25.0129,
+              "lng": 121.4643,
+              "type": "spot",
+              "time": "晚上",
+              "desc": "板桥车站旁，平安夜灯光秀。"
+            }
+          ]
+        },
+        {
+          "label": "D2",
+          "date": "12/25 周五",
+          "title": "市区 · 圣诞节",
+          "locations": [
+            {
+              "name": "中正纪念堂",
+              "lat": 25.0346,
+              "lng": 121.5218,
+              "type": "spot",
+              "time": "上午"
+            },
+            {
+              "name": "永康街",
+              "lat": 25.033,
+              "lng": 121.5297,
+              "type": "food",
+              "time": "中午",
+              "desc": "午饭和芒果冰。"
+            },
+            {
+              "name": "台北 101",
+              "lat": 25.0336,
+              "lng": 121.5646,
+              "type": "spot",
+              "time": "下午"
+            },
+            {
+              "name": "象山步道",
+              "lat": 25.0273,
+              "lng": 121.5764,
+              "type": "spot",
+              "time": "傍晚",
+              "desc": "看日落和 101。"
+            },
+            {
+              "name": "饶河夜市",
+              "lat": 25.0509,
+              "lng": 121.5775,
+              "type": "food",
+              "time": "晚上"
+            }
+          ]
+        },
+        {
+          "label": "D3",
+          "date": "12/26 周六",
+          "title": "十分 · 九份",
+          "locations": [
+            {
+              "name": "十分老街（放天灯）",
+              "lat": 25.0412,
+              "lng": 121.7754,
+              "type": "spot",
+              "time": "上午"
+            },
+            {
+              "name": "九份老街",
+              "lat": 25.1097,
+              "lng": 121.8452,
+              "type": "spot",
+              "time": "下午到晚上"
+            }
+          ]
+        },
+        {
+          "label": "D4",
+          "date": "12/27 周日",
+          "title": "北投 · 淡水",
+          "locations": [
+            {
+              "name": "北投温泉",
+              "lat": 25.1372,
+              "lng": 121.5083,
+              "type": "spot",
+              "time": "上午",
+              "desc": "北投公园、地热谷，泡汤。"
+            },
+            {
+              "name": "淡水老街",
+              "lat": 25.1699,
+              "lng": 121.4398,
+              "type": "spot",
+              "time": "下午到傍晚"
+            },
+            {
+              "name": "士林夜市",
+              "lat": 25.088,
+              "lng": 121.5241,
+              "type": "food",
+              "time": "晚上"
+            }
+          ]
+        },
+        {
+          "label": "D5",
+          "date": "12/28 周一",
+          "title": "故宫 · 宁夏夜市",
+          "locations": [
+            {
+              "name": "同伴离开",
+              "type": "transport",
+              "time": "上午"
+            },
+            {
+              "name": "故宫博物院",
+              "lat": 25.1024,
+              "lng": 121.5485,
+              "type": "spot",
+              "time": "下午"
+            },
+            {
+              "name": "宁夏夜市",
+              "lat": 25.056,
+              "lng": 121.5153,
+              "type": "food",
+              "time": "晚上"
+            }
+          ]
+        },
+        {
+          "label": "D6",
+          "date": "12/29 周二",
+          "title": "飞胡志明",
+          "locations": [
+            {
+              "name": "桃园机场",
+              "lat": 25.0797,
+              "lng": 121.2342,
+              "type": "transport",
+              "time": "白天",
+              "desc": "飞胡志明，接越南跨年。"
+            }
+          ]
+        }
+      ],
       "notes": null,
-      "links": []
+      "links": [],
+      "flights": [
+        {
+          "dir": "in",
+          "no": "ZE887",
+          "from": {
+            "code": "GMP",
+            "city": "首尔金浦"
+          },
+          "to": {
+            "code": "TSA",
+            "city": "台北松山",
+            "term": "T1"
+          },
+          "dep": "2026-12-24T11:25+09:00",
+          "arr": "2026-12-24T12:50+08:00"
+        }
+      ]
     },
     {
       "id": "example-past",
@@ -60,10 +286,21 @@
       "end": "2025-05-03",
       "country": "示例",
       "countryCode": "XX",
-      "route": ["示例城市 A", "示例城市 B"],
+      "route": [
+        "示例城市 A",
+        "示例城市 B"
+      ],
       "places": [
-        { "name": "示例城市 A", "lat": 33.4996, "lng": 126.5312 },
-        { "name": "示例城市 B", "lat": 33.2541, "lng": 126.5600 }
+        {
+          "name": "示例城市 A",
+          "lat": 33.4996,
+          "lng": 126.5312
+        },
+        {
+          "name": "示例城市 B",
+          "lat": 33.2541,
+          "lng": 126.56
+        }
       ],
       "members": 2,
       "cover": null,
@@ -76,8 +313,22 @@
           "date": "5/1",
           "title": "示例第一天",
           "locations": [
-            { "name": "示例景点 1", "lat": 33.5104, "lng": 126.4914, "type": "spot", "time": "10:00", "desc": "地点、时间、说明都可以随便改。" },
-            { "name": "示例餐厅", "lat": 33.4996, "lng": 126.5312, "type": "food", "time": "12:30", "desc": "type 可以是 spot / food / drink / hotel / transport。" }
+            {
+              "name": "示例景点 1",
+              "lat": 33.5104,
+              "lng": 126.4914,
+              "type": "spot",
+              "time": "10:00",
+              "desc": "地点、时间、说明都可以随便改。"
+            },
+            {
+              "name": "示例餐厅",
+              "lat": 33.4996,
+              "lng": 126.5312,
+              "type": "food",
+              "time": "12:30",
+              "desc": "type 可以是 spot / food / drink / hotel / transport。"
+            }
           ]
         },
         {
@@ -85,13 +336,23 @@
           "date": "5/2",
           "title": "示例第二天",
           "locations": [
-            { "name": "示例景点 2", "lat": 33.2541, "lng": 126.5600, "type": "spot", "time": "09:30", "desc": "time 写「—」表示备选。" }
+            {
+              "name": "示例景点 2",
+              "lat": 33.2541,
+              "lng": 126.56,
+              "type": "spot",
+              "time": "09:30",
+              "desc": "time 写「—」表示备选。"
+            }
           ]
         }
       ],
       "notes": "这里写游记。可以写好几段，空一行就是新的一段。\n\n这是第二段示例文字。",
       "links": [
-        { "title": "示例链接（换成相册或小红书笔记）", "url": "https://example.com/" }
+        {
+          "title": "示例链接（换成相册或小红书笔记）",
+          "url": "https://example.com/"
+        }
       ]
     }
   ]
