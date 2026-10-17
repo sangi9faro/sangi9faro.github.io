@@ -1,0 +1,22 @@
+# Cloudflare Worker for 收藏 → 从截图添加 / 粘贴店名 / 粘贴链接.
+# Secrets are NOT in this file. Set them with:  npx wrangler secret put <NAME>
+#   GEMINI_API_KEY   Google AI Studio key (free tier, no billing account)
+#   KAKAO_REST_KEY   Kakao Developers REST API key (Korea)
+#   AMAP_KEY         高德开放平台 Web 服务 key (mainland China)
+#   CONTACT_EMAIL    shown to OpenStreetMap Nominatim in the User-Agent
+name = "faro-favorites"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+OWNER_UID = "X8BxRGYdemf6Wwb9MtQcLAxpy5q2"
+FIREBASE_PROJECT = "vietnam-trip-10761"
+ALLOWED_ORIGIN = "https://sangi9faro.github.io"
+# newest Flash model that AI Studio's free tier offers; change here when Google renames it
+GEMINI_MODEL = "gemini-2.5-flash"
+DAILY_LIMIT = "50"
+
+# daily counter; create once with:  npx wrangler kv namespace create USAGE  → paste the id below
+[[kv_namespaces]]
+binding = "USAGE"
+id = "REPLACE_WITH_KV_ID"

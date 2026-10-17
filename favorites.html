@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="fav/add.css">
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
 /* favorites.html — layout and page-only pieces; tokens and shared components live in ui.css */
@@ -52,6 +53,7 @@ body.fv{overflow:hidden}
 .seg{display:inline-flex;background:var(--surface-2);border-radius:12px;padding:3px}
 .seg button{min-height:34px;border:0;background:none;border-radius:9px;padding:0 12px;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.city-chip{min-height:34px;font-size:14px}
 .filters select,.filters input{min-height:40px;background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:0 12px;min-width:0;font-size:15px}
 .filters input{flex:1 1 160px}
 .status{font-size:13px;color:var(--ink-2)}
@@ -129,6 +131,11 @@ body.fv{overflow:hidden}
   <button class="g-handle" id="handle" aria-label="展开或收起列表"><span></span></button>
   <div class="fv-scroll" id="sideScroll">
     <div class="filters" id="filters">
+      <div class="chips" id="citySeg" role="group" aria-label="城市"></div>
+      <div class="frow">
+        <div class="seg" id="stSeg" role="group" aria-label="去过还是想去"><button data-st="" class="on">全部</button><button data-st="been">去过</button><button data-st="want">想去</button></div>
+        <select id="distSel" aria-label="区" hidden></select>
+      </div>
       <div class="frow">
         <div class="seg" id="ratingSeg" role="group" aria-label="评分"><button data-r="0" class="on">全部</button><button data-r="4">≥4★</button><button data-r="5">5★</button></div>
         <select id="tripSel" aria-label="旅行"><option value="">全部旅行</option></select>
@@ -152,9 +159,12 @@ body.fv{overflow:hidden}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="fav/add.js"></script>
 <script>
 // Replace with your Google account uid (shown under 设置 after signing in), and the same value in firestore.rules
 const OWNER_UID = 'X8BxRGYdemf6Wwb9MtQcLAxpy5q2';
+// localhost → Firebase emulators (tests never touch the live project); never on github.io
+const EMU = !/github\.io$/.test(location.hostname) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -170,7 +180,8 @@ let toastT = 0;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800); }
 
 let favs = [], trips = [], auth = null, db = null, user = null, owner = false, unsub = null;
-const F = { cats: new Set(Object.keys(CATS)), min: 0, trip: new URLSearchParams(location.search).get('trip') || '', q: '', sort: 'rating' };
+const F = { cats: new Set(Object.keys(CATS)), min: 0, trip: new URLSearchParams(location.search).get('trip') || '', q: '', sort: 'rating', st: '', city: new URLSearchParams(location.search).get('city') || '', dist: '' };
+const stOf = f => f.status === 'want' ? 'want' : 'been';   // old entries have no status: 去过
 
 /* ---------- map ---------- */
 const map = L.map('map', { zoomControl: false }).setView([20, 110], 3);
@@ -180,11 +191,11 @@ const cluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRad
 const markers = {};
 let fitted = false;
 const pinIcon = f => { const [i, , c] = CATS[f.category] || CATS.other;
-  return L.divIcon({ className: '', html: `<div class="mk" data-fav="${esc(f.id)}" style="--c:${c}">${ic(i)}<span class="pin-r">${f.rating}★</span></div>`, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18] }); };
+  return L.divIcon({ className: '', html: `<div class="mk${stOf(f) === 'want' ? ' want' : ''}" data-fav="${esc(f.id)}" style="--c:${c}">${ic(i)}<span class="pin-r">${stOf(f) === 'want' ? '想去' : f.rating + '★'}</span></div>`, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18] }); };
 function popupHtml(f) {
   const [, n] = CATS[f.category] || CATS.other, link = safeUrl(f.link);
-  return `<div class="pop"><b>${esc(f.name)}</b>${f.private ? ' ' + ic('lock', 'i18') : ''}<div>${stars(f.rating)} <span class="num">${price(f.price)}</span></div>
-    ${f.note ? `<p>${esc(f.note)}</p>` : ''}<div class="m">${esc([f.city, f.country].filter(Boolean).join(' · '))}${f.visitedAt ? ' · ' + esc(f.visitedAt) : ''} · ${n}</div>
+  return `<div class="pop"><b>${esc(f.name)}</b>${f.private ? ' ' + ic('lock', 'i18') : ''}<div>${stOf(f) === 'want' ? '想去' : stars(f.rating)} <span class="num">${price(f.price)}</span></div>
+    ${f.note ? `<p>${esc(f.note)}</p>` : ''}${f.nameLocal && f.nameLocal !== f.name ? `<div class="m">${esc(f.nameLocal)}</div>` : ''}${f.address ? `<div class="m">${esc(f.address)}</div>` : ''}<div class="m">${esc([f.city, f.district, f.country].filter(Boolean).join(' · '))}${f.visitedAt ? ' · ' + esc(f.visitedAt) : ''} · ${n}</div>
     ${f.tags && f.tags.length ? `<div class="tags">${f.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
     <div class="acts"><a class="btn btn-sm btn-primary" href="https://www.google.com/maps/search/?api=1&query=${+f.lat},${+f.lng}" target="_blank" rel="noopener">${ic('navigation', 'i18')}导航</a>${link ? `<a class="btn btn-sm" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${ic('link', 'i18')}链接</a>` : ''}</div>
     ${owner ? `<div class="own"><button data-edit="${esc(f.id)}">改</button><button class="del" data-del="${esc(f.id)}">删</button></div>` : ''}</div>`;
@@ -197,12 +208,16 @@ $('#cats').addEventListener('click', e => { const b = e.target.closest('[data-c]
   F.cats.has(k) ? F.cats.delete(k) : F.cats.add(k); b.classList.toggle('on', F.cats.has(k)); b.setAttribute('aria-pressed', F.cats.has(k)); render(); });
 $('#ratingSeg').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; F.min = +b.dataset.r; document.querySelectorAll('#ratingSeg button').forEach(x => x.classList.toggle('on', x === b)); render(); });
 $('#sortSeg').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; F.sort = b.dataset.s; document.querySelectorAll('#sortSeg button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('#stSeg').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (!b) return; F.st = b.dataset.st; document.querySelectorAll('#stSeg button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('#citySeg').addEventListener('click', e => { const b = e.target.closest('[data-city]'); if (!b) return; F.city = b.dataset.city; F.dist = ''; fitted = false; render(); });
+$('#distSel').addEventListener('change', e => { F.dist = e.target.value; fitted = false; render(); });
 $('#tripSel').addEventListener('change', e => { F.trip = e.target.value; fitted = false; render(); });
 $('#q').addEventListener('input', e => { F.q = e.target.value.trim().toLowerCase(); render(); });
 const tripName = id => (trips.find(t => t.id === id) || {}).title || id;
 function filtered() {
-  return favs.filter(f => F.cats.has(f.category in CATS ? f.category : 'other') && f.rating >= F.min && (!F.trip || f.tripId === F.trip)
-      && (!F.q || [f.name, f.city, f.country, ...(f.tags || [])].join(' ').toLowerCase().includes(F.q)))
+  return favs.filter(f => F.cats.has(f.category in CATS ? f.category : 'other') && (!F.min || (stOf(f) === 'been' && f.rating >= F.min)) && (!F.st || stOf(f) === F.st)
+      && (!F.trip || (F.trip === '__daily' ? !f.tripId : f.tripId === F.trip)) && (!F.city || f.city === F.city) && (!F.dist || f.district === F.dist)
+      && (!F.q || [f.name, f.nameLocal, f.city, f.district, f.country, f.cuisine, ...(f.tags || [])].join(' ').toLowerCase().includes(F.q)))
     .sort((a, b) => F.sort === 'date' ? (b.visitedAt || '').localeCompare(a.visitedAt || '') || b.rating - a.rating
                                        : b.rating - a.rating || (b.visitedAt || '').localeCompare(a.visitedAt || ''));
 }
@@ -210,8 +225,10 @@ function filtered() {
 /* ---------- render ---------- */
 function render() {
   const list = filtered();
-  const avg = favs.length ? (favs.reduce((s, f) => s + f.rating, 0) / favs.length).toFixed(1) : '–';
-  $('#stats').textContent = `${favs.length} 个地方 · 平均 ${avg}★ · ${new Set(favs.map(f => f.city).filter(Boolean)).size} 个城市`;
+  const been = favs.filter(f => stOf(f) === 'been' && f.rating > 0), want = favs.length - favs.filter(f => stOf(f) === 'been').length;
+  const avg = been.length ? (been.reduce((s, f) => s + f.rating, 0) / been.length).toFixed(1) : '–';
+  $('#stats').textContent = `${favs.length} 个地方${want ? `（想去 ${want}）` : ''} · 平均 ${avg}★ · ${new Set(favs.map(f => f.city).filter(Boolean)).size} 个城市`;
+  drawCities();
   cluster.clearLayers(); for (const k in markers) delete markers[k];
   list.forEach(f => { const m = L.marker([f.lat, f.lng], { icon: pinIcon(f) }).bindPopup(() => popupHtml(f), { maxWidth: 260 }); markers[f.id] = m; cluster.addLayer(m); });
   if (list.length && !fitted) { map.fitBounds(list.map(f => [f.lat, f.lng]), { padding: [30, 30], maxZoom: 15 }); fitted = true; }
@@ -220,9 +237,32 @@ function render() {
       <div><b>${esc(f.name)}${f.private ? ' ' + ic('lock', 'i18') : ''}</b><div class="m">${esc([f.city, f.visitedAt, price(f.price), f.tripId ? tripName(f.tripId) : ''].filter(Boolean).join(' · '))}</div>
         ${f.note ? `<div class="n">${esc(f.note)}</div>` : ''}${f.tags && f.tags.length ? `<div class="tags">${f.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
         ${owner ? `<div class="own"><button data-edit="${esc(f.id)}">改</button><button class="del" data-del="${esc(f.id)}">删</button></div>` : ''}</div>
-      <span class="r">${f.rating}★</span></div>`; }).join('')
+      <span class="r${stOf(f) === 'want' ? ' want' : ''}">${stOf(f) === 'want' ? '想去' : f.rating + '★'}</span></div>`; }).join('')
     : `<div class="empty">${ic(favs.length ? 'search-x' : 'heart')}${favs.length ? '没有符合筛选的收藏。' : '还没有收藏。登录后点右下角的＋添加第一个地方。'}${favs.length ? '' : (owner ? '<button class="btn btn-primary" onclick="openForm(null)">添加第一个地方</button>' : (auth ? '<button class="btn" onclick="signIn()">登录</button>' : ''))}</div>`;
   icons($('#list')); icons($('#map'));
+}
+// 城市: 全部, 首尔, 成都, then every other city in the collection (most entries first); 区 for the chosen city
+function drawCities() {
+  const n = {}; favs.forEach(f => { if (f.city) n[f.city] = (n[f.city] || 0) + 1; });
+  const list = [...new Set(['首尔', '成都', ...Object.keys(n).sort((a, b) => n[b] - n[a])])];
+  $('#citySeg').innerHTML = [['', '全部'], ...list.map(c => [c, c])].map(([v, t]) => `<button class="chip city-chip${F.city === v ? ' on' : ''}" data-city="${esc(v)}">${esc(t)}${v && n[v] ? ` <span class="num">${n[v]}</span>` : ''}</button>`).join('');
+  const ds = [...new Set(favs.filter(f => f.city === F.city && f.district).map(f => f.district))].sort();
+  $('#distSel').hidden = !F.city || !ds.length;
+  $('#distSel').innerHTML = `<option value="">全部区</option>` + ds.map(d => `<option ${d === F.dist ? 'selected' : ''}>${esc(d)}</option>`).join('');
+}
+// first visit: the city I am in (nearest of 首尔 / 成都 / my saved cities, within 80 km); no permission → 全部
+const HOME = { 首尔: [37.5665, 126.978], 成都: [30.5728, 104.0668] };
+let cityGuessed = !!F.city;
+function guessCity() {
+  if (cityGuessed || !navigator.geolocation) return; cityGuessed = true;
+  const pts = { ...HOME }; const acc = {};
+  favs.forEach(f => { if (!f.city) return; const a = acc[f.city] = acc[f.city] || [0, 0, 0]; a[0] += f.lat; a[1] += f.lng; a[2]++; });
+  for (const [c, [la, ln, k]] of Object.entries(acc)) if (!pts[c]) pts[c] = [la / k, ln / k];
+  navigator.geolocation.getCurrentPosition(p => {
+    const me = [p.coords.latitude, p.coords.longitude], d = ([a, b]) => Math.hypot((a - me[0]) * 111, (b - me[1]) * 111 * Math.cos(me[0] * Math.PI / 180));
+    const best = Object.entries(pts).sort((x, y) => d(x[1]) - d(y[1]))[0];
+    if (best && d(best[1]) < 80 && !F.city) { F.city = best[0]; fitted = false; render(); }
+  }, () => {}, { timeout: 6000, maximumAge: 600000 });
 }
 $('#list').addEventListener('click', e => {
   if (e.target.closest('.own')) return;
@@ -260,7 +300,8 @@ function sheetHtml(f) {
     <label>名称<input id="fName" maxlength="60" value="${esc(f.name)}" required></label>
     <div class="two"><label>类型<select id="fCat">${Object.entries(CATS).map(([k, [, n]]) => `<option value="${k}" ${f.category === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label>价格<select id="fPrice">${['不填', '¥', '¥¥', '¥¥¥', '¥¥¥¥'].map((t, i) => `<option value="${i}" ${f.price === i ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
-    <div><span class="coord">评分</span><div class="starpick" id="fStars" role="radiogroup" aria-label="评分">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" role="radio" aria-label="${i} 星" aria-checked="${i === f.rating}" class="${i <= f.rating ? 'on' : ''}">${ic('star')}</button>`).join('')}</div></div>
+    <div class="seg" id="fSt" role="group" aria-label="去过还是想去"><button type="button" data-st="been" class="${f.status === 'want' ? '' : 'on'}">去过</button><button type="button" data-st="want" class="${f.status === 'want' ? 'on' : ''}">想去</button></div>
+    <div><span class="coord">评分（想去可以不打）</span><div class="starpick" id="fStars" role="radiogroup" aria-label="评分">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" role="radio" aria-label="${i} 星" aria-checked="${i === f.rating}" class="${i <= f.rating ? 'on' : ''}">${ic('star')}</button>`).join('')}</div></div>
     <label>短评<textarea id="fNote" rows="2" maxlength="500">${esc(f.note)}</textarea></label>
     <div class="two"><label>城市<input id="fCity" maxlength="30" value="${esc(f.city)}"></label><label>国家/地区<input id="fCountry" maxlength="30" value="${esc(f.country)}"></label></div>
     <div class="two"><label>旅行<select id="fTrip"><option value="">不属于某次旅行</option>${trips.map(t => `<option value="${esc(t.id)}" ${f.tripId === t.id ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}</select></label>
@@ -275,15 +316,16 @@ function sheetHtml(f) {
 }
 function openForm(f) {
   if (!owner) return;
-  form = f ? { ...f } : { id: null, name: '', category: 'food', rating: 5, note: '', city: '', country: '', tripId: F.trip || null, visitedAt: todayStr(), price: 0, tags: [], link: '', private: false, lat: null, lng: null };
+  form = f ? { status: 'been', ...f } : { id: null, status: 'been', name: '', category: 'food', rating: 5, note: '', city: '', country: '', tripId: F.trip || null, visitedAt: todayStr(), price: 0, tags: [], link: '', private: false, lat: null, lng: null };
   if (innerWidth >= 768) { $('#formSlot').innerHTML = sheetHtml(form); $('#list').hidden = true; $('#filters').hidden = true; $('#sideScroll').scrollTop = 0; }
   else document.body.insertAdjacentHTML('beforeend', sheetHtml(form));
   icons($('#sheetBg')); if ($('#fBack')) $('#fBack').addEventListener('click', closeForm);
   if (form.lat != null) setTemp(form.lat, form.lng);
   const s = $('#sheetBg');
   s.addEventListener('click', e => { if (e.target === s) closeForm(); });
-  $('#fStars').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; form.rating = +b.dataset.v;
+  $('#fStars').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; form.rating = +b.dataset.v; form.ratingTouched = true;
     $('#fStars').querySelectorAll('button').forEach(x => { x.classList.toggle('on', +x.dataset.v <= form.rating); x.setAttribute('aria-checked', +x.dataset.v === form.rating); }); });
+  $('#fSt').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (!b) return; form.status = b.dataset.st; $('#fSt').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
   $('#fCancel').addEventListener('click', closeForm);
   $('#fGeo').addEventListener('click', useMyLocation);
   $('#fPick').addEventListener('click', () => { if (!s.classList.contains('inline')) s.hidden = true; $('#pickHint').hidden = false; });
@@ -317,12 +359,16 @@ async function save() {
   const name = $('#fName').value.trim(), link = $('#fLink').value.trim();
   if (!name) return toast('先填名称');
   if (form.lat == null) return toast('先设置位置');
+  if (form.status !== 'want' && !(form.rating >= 1)) return toast('去过的地方要打分');
   if (link && !safeUrl(link)) return toast('链接要以 http 或 https 开头');
   const tags = $('#fTags').value.split(/[,，、\s]+/).map(t => t.trim().slice(0, 12)).filter(Boolean).slice(0, 8);
   const now = Date.now(), date = $('#fDate').value;
   const doc = { name: name.slice(0, 60), category: $('#fCat').value, lat: form.lat, lng: form.lng, rating: form.rating, note: $('#fNote').value.trim().slice(0, 500),
     city: $('#fCity').value.trim().slice(0, 30), country: $('#fCountry').value.trim().slice(0, 30), tripId: $('#fTrip').value || null,
-    visitedAt: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null, price: +$('#fPrice').value, tags, link, private: $('#fPrivate').checked, at: form.at || now, updatedAt: now };
+    visitedAt: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null, price: +$('#fPrice').value, tags, link, private: $('#fPrivate').checked, at: form.at || now, updatedAt: now,
+    status: form.status === 'want' ? 'want' : 'been', source: form.source || 'manual' };
+  if (doc.status === 'want' && !form.ratingTouched) doc.rating = form.id ? (form.rating || 0) : 0;
+  for (const k of ['nameLocal', 'address', 'district', 'cuisine', 'countryCode']) if (form[k]) doc[k] = form[k];   // fields from 截图识别 survive an edit
   const btn = $('#fSave'); btn.disabled = true;
   const ref = form.id ? db.collection('favorites').doc(form.id) : db.collection('favorites').doc();
   // with offline cache the write is queued locally and resolves once the server confirms
@@ -333,7 +379,7 @@ async function save() {
   else if (done === 'pending') { toast('已保存到本机，联网后会自动同步'); closeForm(); }
   else toast(errMsg(done));
 }
-$('#fab').addEventListener('click', () => openForm(null));
+$('#fab').addEventListener('click', e => { e.stopPropagation(); FavAdd.menu(); });   // keep the outside-click handler from closing it again
 
 /* phone: list sheet with three heights (drag or tap the handle) */
 const side = $('#side'), handle = $('#handle'), topH = () => ($('.fv-top') || {}).offsetHeight || 110;
@@ -364,7 +410,7 @@ function renderAuth() {
   $('#fab').hidden = !owner;
 }
 async function signIn() {
-  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  try { await (EMU ? auth.signInWithEmailAndPassword('owner@example.com', 'emulator-only') : auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())); }
   catch (err) { toast(err.code === 'auth/popup-blocked' ? '弹窗被浏览器拦截了，允许弹窗后再试' : err.code === 'auth/popup-closed-by-user' ? '登录窗口被关掉了' : err.code === 'auth/operation-not-allowed' ? 'Google 登录还没在 Firebase 里启用' : err.code === 'auth/unauthorized-domain' ? '这个网址还没加入 Firebase 授权网域' : '登录失败：' + err.code); }
 }
 function subscribe() {
@@ -374,14 +420,17 @@ function subscribe() {
   unsub = (owner ? col : col.where('private', '==', false)).onSnapshot(s => {
     favs = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => typeof f.lat === 'number' && typeof f.lng === 'number' && f.name);
     $('#status').textContent = s.metadata.fromCache ? '离线，显示的是本机缓存' : '';
-    render();
+    render(); if (favs.length && !s.metadata.fromCache) guessCity();
   }, () => { $('#status').textContent = '无法读取收藏，检查一下网络。'; });
 }
+
+FavAdd.init({ CATS, esc, ic, icons, toast, errMsg, openForm, user: () => user, db: () => db, favs: () => favs, today: todayStr,
+  currentCity: () => F.city, mapCenter: () => { const c = map.getCenter(); return [c.lat, c.lng]; } });
 
 /* ---------- boot: trips list, then Firebase in the background ---------- */
 fetch('trips.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
   trips = (d.trips || []).filter(t => t && t.id);
-  $('#tripSel').innerHTML = '<option value="">全部旅行</option>' + trips.map(t => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('');
+  $('#tripSel').innerHTML = '<option value="">全部旅行</option><option value="__daily">日常</option>' + trips.map(t => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('');
   $('#tripSel').value = F.trip; render();
 }).catch(() => {});
 render();
@@ -392,10 +441,11 @@ function loadScript(src) { return new Promise((res, rej) => { const el = documen
   const timer = setTimeout(fail, 10000);
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
   try { for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', 'firebase-config.js']) await loadScript(s);
-    firebase.initializeApp(window.FIREBASE_CONFIG); }
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    if (EMU) { firebase.auth().useEmulator('http://127.0.0.1:9199', { disableWarnings: true }); firebase.firestore().useEmulator('127.0.0.1', 8080); } }
   catch (e) { clearTimeout(timer); fail(); return; }
   db = firebase.firestore();
-  try { await db.enablePersistence({ synchronizeTabs: true }); } catch (e) {}   // offline cache; ignore if unsupported
+  if (!EMU) try { await db.enablePersistence({ synchronizeTabs: true }); } catch (e) {}   // offline cache; ignore if unsupported
   auth = firebase.auth(); ok = true; clearTimeout(timer);
   auth.onAuthStateChanged(u => { user = u; owner = !!u && u.uid === OWNER_UID; renderAuth(); subscribe(); render(); });
 })();

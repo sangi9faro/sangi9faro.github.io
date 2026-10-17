@@ -1,0 +1,60 @@
+/* 收藏 → ＋ 从截图添加 / 粘贴店名 / 粘贴链接: menu, review panel, confirmation cards. Tokens come from ui.css. */
+.add-menu{position:fixed;right:16px;bottom:calc(var(--peek,170px) + 84px);z-index:1100;width:min(320px,calc(100vw - 32px));padding:6px;border-radius:var(--r-l);
+  background:var(--surface);box-shadow:var(--shadow-2);border:1px solid var(--line);display:grid;gap:2px}
+.add-menu button{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:0;border-radius:12px;background:none;color:var(--ink);text-align:left;cursor:pointer}
+.add-menu button:hover:not(:disabled){background:var(--surface-2)}
+.add-menu button:disabled{opacity:.5;cursor:not-allowed}
+.add-menu button svg.lucide{width:22px;height:22px;color:var(--accent);flex-shrink:0}
+.add-menu span{display:grid;gap:1px}
+.add-menu b{font-size:15px}
+.add-menu small{font-size:12px;color:var(--ink-2)}
+
+.ra-bg{position:fixed;inset:0;z-index:1250;background:rgba(14,20,25,.45);display:flex;align-items:flex-end;justify-content:center}
+.ra{width:100%;max-width:560px;height:min(94dvh,calc(100dvh - var(--safe-t) - 8px));background:var(--bg);border-radius:var(--r-l) var(--r-l) 0 0;display:flex;flex-direction:column;box-shadow:var(--shadow-2)}
+.ra-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}
+.ra-h h2{font-size:20px}
+.ra-prog{padding:0 16px 8px;display:grid;gap:6px;font:600 13px var(--font-num);color:var(--ink-2)}
+.ra-prog i{display:block;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.ra-prog b{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.ra-msg{margin:0 16px 8px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ra-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px calc(24px + var(--safe-b));display:grid;gap:12px;align-content:start}
+.ra-intro{display:grid;gap:12px;padding:14px;border-radius:var(--r-m);background:var(--surface)}
+.ra-intro .sub{display:flex;gap:8px;align-items:flex-start;margin:0}
+.ra-intro textarea,.ra-intro input,.ra-intro select{font-size:16px}
+.ra-res{display:grid;gap:6px}
+.ra-pick{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.ra-pick:hover{border-color:var(--accent)}
+.ra-pick span{font-size:12px;color:var(--ink-2)}
+
+.rc{display:grid;gap:10px;padding:12px;border-radius:var(--r-m);background:var(--surface);box-shadow:var(--shadow-1);transition:opacity .3s,transform .3s}
+.rc.saved{opacity:0;transform:scale(.97)}
+.rc-warn{margin:0;display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;font-size:13px;font-weight:600;
+  background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn)}
+.rc-map{height:150px;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.rc-head{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:start}
+.rc-head .emo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--c)}
+.rc-head b{display:block;font-size:17px;line-height:1.3}
+.rc-head b small{display:block;font-size:13px;font-weight:500;color:var(--ink-2)}
+.rc-head .m{font-size:13px;color:var(--ink-2)}
+.starpick.big button{width:52px;height:52px}
+.starpick.big button svg.lucide{width:34px;height:34px}
+.starpick.off{opacity:.35}
+.rc-alt,.rc-edit,.rc-dup{display:grid;gap:8px;padding:10px;border-radius:12px;background:var(--surface-2)}
+.rc-dup p{margin:0;display:flex;gap:6px;align-items:center;font-weight:600}
+.rc-c{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-2);cursor:pointer}
+.rc-c input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+.rc-c b{display:block;color:var(--ink);font-size:14px}
+.rc-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rc-acts [data-save]{margin-left:auto;min-width:88px}
+.rc-fail p{margin:0;display:flex;gap:8px;align-items:center}
+
+/* 想去: hollow marker, label instead of stars */
+.mk.want{background:var(--surface);color:var(--c);border:2.5px solid var(--c)}
+.item .r.want{font:600 13px var(--font-sans,inherit);color:var(--ink-2)}
+
+@media (min-width:768px){
+  .add-menu{left:calc(min(400px,100vw) - 336px);right:auto;bottom:92px}
+  .ra-bg{align-items:center}
+  .ra{border-radius:var(--r-l);height:min(88dvh,820px)}
+}
+.rc [data-save]:disabled{opacity:.4;cursor:not-allowed}
