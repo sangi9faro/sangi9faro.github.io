@@ -1,5 +1,6 @@
 // 新建旅行 (owner, homepage): five short steps in one sheet, then writes trips/{id}, info/static and the cover.
-// Needs editor.js (sheet), cover.js, countries.js, Leaflet (for picking cities on the map).
+// Needs editor.js (sheet), cover.js, countries.js, presets.js, Leaflet (for picking cities on the map).
+// The new trip starts with the same sections as the Vietnam trip (presets.js), filled for its country.
 (function () {
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const icons = r => { try { lucide.createIcons({ attrs: { 'stroke-width': 1.75 }, root: r }); } catch (e) {} };
@@ -11,24 +12,17 @@
   const search = q => geo(`https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`);
   const reverse = (lat, lng) => geo(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat=${lat}&lon=${lng}`);
   const placeName = r => { const a = r.address || {}; return a.city || a.town || a.village || a.county || a.state || (r.display_name || '').split(',')[0]; };
-  async function fetchRate(cur) { if (cur === 'CNY') return null;
-    try { const c = new AbortController(); setTimeout(() => c.abort(), 4000); const j = await (await fetch('https://open.er-api.com/v6/latest/CNY', { signal: c.signal })).json(); return j.rates && j.rates[cur] || null; } catch (e) { return null; } }
-
-  // merge chosen templates: packing categories by id (items unique by key), checklist unique by key
-  function merge(templates) {
-    const cats = [], chk = [];
-    for (const t of templates) {
-      for (const c of t.packing || []) { let x = cats.find(y => y.id === c.id); if (!x) { x = { ...c, items: [] }; cats.push(x); } for (const i of c.items || []) if (!x.items.some(j => j.k === i.k)) x.items.push(i); }
-      for (const i of t.checklist || []) if (!chk.some(j => j.k === i.k)) chk.push(i);
-    }
-    return { packingItems: cats, checklistItems: chk };
-  }
+  // 1 CNY = x of each currency (open.er-api.com, free, no key)
+  async function fetchRates(curs) { const want = curs.filter(c => c !== 'CNY'); if (!want.length) return {};
+    try { const c = new AbortController(); setTimeout(() => c.abort(), 4000); const j = await (await fetch('https://open.er-api.com/v6/latest/CNY', { signal: c.signal })).json();
+      return Object.fromEntries(want.filter(k => j.rates && j.rates[k]).map(k => [k, j.rates[k]])); } catch (e) { return {}; } }
 
   function open({ fs, uid, onCreated }) {
-    const st = { step: 0, title: '', start: '', end: '', country: 'TW', places: [], n: 2, names: ['', '', '', '', '', '', '', ''], tpl: { base: true }, mods: { guide: true, tools: true, bills: true, packing: true, vote: false },
+    const st = { step: 0, title: '', start: '', end: '', country: 'TW', places: [], n: 2, names: ['', '', '', '', '', '', '', ''], tpl: { base: true }, mods: { guide: true, tools: true, bills: true, packing: true, vote: true },
       color: TripEditor.COLORS[1], visibility: 'members', id: '', cover: null, coverPos: '50% 50%' };
-    let templates = {}, map = null, results = [];
-    fs.collection('templates').get().then(s => { s.docs.forEach(d => { templates[d.id] = d.data(); }); if (st.step === 3) draw(); }).catch(() => {});
+    // built-in templates (presets.js); a v2+ copy in Firestore (templates/{id}) wins, so they can be tuned without a deploy
+    const templates = { ...TripPresets.TEMPLATES }; let map = null, results = [];
+    fs.collection('templates').get().then(s => { s.docs.forEach(d => { if ((d.data().v || 1) >= 2) templates[d.id] = d.data(); }); }).catch(() => {});
     const s = TripEditor.sheet('新建旅行', '<form class="tform nt" novalidate></form>', { wide: true });
     const f = s.body.querySelector('form');
     const year = () => (st.start || '').slice(0, 4) || String(new Date().getFullYear());
@@ -50,7 +44,7 @@
         ${Array.from({ length: st.n }, (_, i) => `<label class="tf">成员 ${'ABCDEFGH'[i]}${i === 0 ? '（一般是你自己）' : ''}<input data-name="${i}" maxlength="20" value="${esc(st.names[i])}" placeholder="成员${'ABCDEFGH'[i]}"></label>`).join('')}
         <p class="sub">名字只存在这次旅行的数据里，之后可以改。</p>`;
       if (st.step === 3) body = `<div class="tf">清单模板（可以多选，合并后复制到这次旅行，以后单独增删）
-          <div class="tg-list">${Object.entries({ base: '所有旅行都要的', beach: '海岛 / 海边', city: '城市游', cold: '冬天' }).map(([k, n]) => `<label class="tg"><input type="checkbox" data-tpl="${k}" ${st.tpl[k] ? 'checked' : ''} ${templates[k] ? '' : 'disabled'}><span>${n}${templates[k] ? '' : '（还没写入模板）'}</span></label>`).join('')}</div></div>
+          <div class="tg-list">${Object.entries(TripPresets.NAMES).map(([k, n]) => `<label class="tg"><input type="checkbox" data-tpl="${k}" ${st.tpl[k] ? 'checked' : ''}><span>${n}</span></label>`).join('')}</div></div>
         <div class="tf">启用的功能<div class="tg-list">${TripEditor.MODULES.map(([k, n]) => `<label class="tg"><input type="checkbox" data-mod="${k}" ${st.mods[k] ? 'checked' : ''}><span>${n}</span></label>`).join('')}</div></div>`;
       if (st.step === 4) body = `<div class="tf">封面（可以跳过，以后再换）<div class="cov" id="ntCover" style="${TripCover.css({ id: '', color: st.color, coverPos: st.coverPos }, st.cover && st.cover.data)}"><span class="cov-hint">${st.cover ? '拖动调整显示位置' : (TripCountries.byCode(st.country) || {}).name || ''}</span></div>
           <div class="row"><label class="btn btn-sm"><i data-lucide="image-up" class="i18"></i>从相册选</label><input type="file" accept="image/*" hidden id="ntFile"><span class="sub" id="ntCoverInfo">${st.cover ? `${Math.round(st.cover.size / 1024)} KB` : ''}</span></div></div>
@@ -119,19 +113,17 @@
       if ((await ref.get()).exists) throw new Error(`id「${st.id}」已经用过了，换一个`);
       const C = TripCountries.byCode(st.country) || { name: st.country, cur: 'CNY', sos: [] };
       const members = Object.fromEntries(Array.from({ length: st.n }, (_, i) => ['m' + (i + 1), st.names[i] || '成员' + 'ABCDEFGH'[i]]));
-      const rate = await fetchRate(C.cur);
+      const currencies = [...new Set([C.cur, 'CNY', 'KRW'])], rates = await fetchRates(currencies);   // like Vietnam: local, 人民币, 韩元
       const trip = { title: st.title, start: st.start, end: st.end, country: C.name, countryCode: st.country, route: st.places.map(p => p.name), places: st.places,
-        color: st.color, summary: '', coverPos: st.coverPos, members, modules: st.mods, currencies: C.cur === 'CNY' ? ['CNY'] : [C.cur, 'CNY'], baseCurrency: 'CNY',
-        rates: rate ? { [C.cur]: rate } : {}, ratesAt: rate ? Date.now() : 0, joinCode: TripInvite.newCode(), visibility: st.visibility, owner: uid, at: Date.now(), updatedAt: Date.now() };
+        color: st.color, summary: '', coverPos: st.coverPos, members, modules: st.mods, currencies, baseCurrency: 'CNY',
+        rates, ratesAt: Object.keys(rates).length ? Date.now() : 0, joinCode: TripInvite.newCode(), visibility: st.visibility, owner: uid, at: Date.now(), updatedAt: Date.now() };
       const chosen = Object.keys(st.tpl).filter(k => st.tpl[k] && templates[k]).map(k => templates[k]);
-      const { packingItems, checklistItems } = merge(chosen);
       await ref.set(trip);
-      await fs.doc(`trips/${st.id}/info/static`).set({ flights: [], hotels: [], transport: [], group: [], personal: checklistItems, checklistItems, phrases: [], tips: [],
-        sos: C.sos.map(([label, number]) => ({ label, number })), packingItems, stays: [], notices: [], highlight: null, guideNotes: [], at: Date.now() });
+      await fs.doc(`trips/${st.id}/info/static`).set({ ...TripPresets.info(st.country, chosen), at: Date.now() });
       if (st.cover) await TripCover.save(fs, st.id, st.cover);
       s.close(); onCreated && onCreated(st.id, trip);
     }
     draw();
   }
-  window.TripNew = { open, merge };
+  window.TripNew = { open };
 })();

@@ -85,7 +85,7 @@ let db, auth;
 (async function start() {
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
   try {
-    for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', '../firebase-config.js', VT + 'trip-data.js', VT + 'packing.js']) await loadScript(s);
+    for (const s of [SDK + 'firebase-app-compat.js', SDK + 'firebase-auth-compat.js', SDK + 'firebase-firestore-compat.js', '../firebase-config.js', VT + 'trip-data.js', VT + 'packing.js', '../t/modules/countries.js', '../t/modules/presets.js']) await loadScript(s);
   } catch (e) { $('#authState').textContent = '载入失败：' + e.message; return; }
   firebase.initializeApp(window.FIREBASE_CONFIG);
   auth = firebase.auth(); db = firebase.firestore();
@@ -262,21 +262,11 @@ async function importDays() {
 
 /* ---------- checklist templates ---------- */
 async function writeTemplates() {
-  const cats = window.Packing.CATS.map(c => ({ id: c.id, label: c.label, icon: c.icon, items: c.items.map(([k, label, w, note]) => ({ k, label, w, ...(note ? { note } : {}) })) }));
-  const pick = (ids, drop = []) => cats.filter(c => ids.includes(c.id)).map(c => ({ ...c, items: c.items.filter(i => !drop.includes(i.k)) }));
-  // trip-specific rows (跳岛当天, 大巴过夜, 1/1 跳岛 notes) stay out of the general templates
-  const strip = cs => cs.map(c => ({ ...c, items: c.items.map(({ note, ...i }) => (/\d+\/\d+|跳岛|芽庄|大巴/.test(note || '') ? i : { ...i, ...(note ? { note } : {}) })) }));
-  const T = {
-    base: { title: '所有旅行', packing: strip(pick(['docs', 'money', 'elec', 'toilet', 'meds'], ['seasick', 'vnd', 'homecash', 'evisa'])),
-      checklist: [{ k: 'passport', label: '护照有效期 6 个月以上' }, { k: 'visa', label: '签证 / 入境要求' }, { k: 'ticket', label: '机票已出票' }, { k: 'esim', label: 'eSIM / 流量' }, { k: 'cash', label: '换一些当地货币' }, { k: 'insurance', label: '旅行保险' }] },
-    beach: { title: '海岛 / 海边', packing: strip(pick(['clothes', 'toilet', 'meds'])), checklist: [] },
-    city: { title: '城市游', packing: [{ id: 'clothes', label: '衣物', icon: 'shirt', items: [{ k: 'tees', label: '换洗衣服', w: 'check' }, { k: 'jacket', label: '薄外套', w: 'carry' }, { k: 'umbrella', label: '雨衣或折叠伞', w: 'carry' }, { k: 'shoes', label: '舒服的鞋', w: 'check' }, { k: 'pajamas', label: '睡衣', w: 'check' }] },
-      { id: 'city', label: '城市', icon: 'train-front', items: [{ k: 'transitcard', label: '交通卡（悠游卡、T-money…）', w: 'carry' }, { k: 'tote', label: '购物袋', w: 'carry' }] }], checklist: [{ k: 'transit', label: '查好机场到市区的交通' }] },
-    cold: { title: '冬天', packing: [{ id: 'cold', label: '保暖', icon: 'snowflake', items: [{ k: 'downjacket', label: '羽绒服', w: 'carry' }, { k: 'heatpads', label: '暖宝宝', w: 'check' }, { k: 'moisturizer', label: '保湿霜、润唇膏', w: 'check' }, { k: 'gloves', label: '手套、围巾、帽子', w: 'check' }] }], checklist: [] },
-  };
+  // the built-in templates (t/modules/presets.js, modelled on the Vietnam trip); older versions get replaced
   const ops = [];
-  for (const [id, t] of Object.entries(T)) { const ref = db.collection('templates').doc(id); if (!(await ref.get()).exists) ops.push({ ref, data: { ...t, at: Date.now() } }); }
-  await writeAll(ops); log(`templates：写入 ${ops.length}（已存在的跳过）`);
+  for (const [id, t] of Object.entries(TripPresets.TEMPLATES)) { const ref = db.collection('templates').doc(id), cur = await ref.get();
+    if (!cur.exists || (cur.data().v || 1) < t.v) ops.push({ ref, data: { ...t, at: Date.now() } }); }
+  await writeAll(ops); log(`templates：写入 ${ops.length}（已是最新的跳过）`);
 }
 </script>
 </body>
