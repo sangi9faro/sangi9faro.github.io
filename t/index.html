@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<script>/* theme-color follows a manual light/dark switch (data-theme) */(function(){var C={light:'#F4F6F8',dark:'#0E1419'},r=document.documentElement;function s(){var t=r.getAttribute('data-theme');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=C[t]||(/dark/.test(m.media)?C.dark:C.light)})}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['data-theme']})})();</script>
+<meta name="robots" content="noindex,nofollow">
+<title>工具箱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌴</text></svg>">
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>/* /t/?id=…#guide and #vote live on their own pages */(function(){var h=location.hash.slice(1);if(h==="guide"||h==="vote")location.replace((h==="guide"?"guide.html":"vote.html")+location.search)})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="/ui.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+/* index.html (toolbox) — page-only styles; tokens and shared components live in ui.css */
+/* no backdrop-filter here: it would turn the fixed bottom tab bar (a child) into a header-relative box */
+.top{position:sticky;top:var(--tn-top-h,0px);z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1600px;margin:0 auto;padding:8px 16px}
+/* secondary capsule tabs (the trip nav itself lives in trip-nav.js) */
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;min-height:40px;padding:0 14px;border:1px solid var(--line);background:var(--surface);border-radius:999px;color:var(--ink-2);font-size:14px;font-weight:700;cursor:pointer}
+.tab svg{width:16px;height:16px}
+.tab.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px calc(32px + var(--tabbar-h));display:grid;gap:14px}
+section.wrap{padding:0}
+.card{padding:16px;display:grid;gap:10px;align-content:start}
+.card h2{font-size:17px;display:flex;align-items:center;gap:8px}
+.card h2 svg.lucide{color:var(--accent)}
+.sub{margin:0;color:var(--ink-2);font-size:13px}
+.status{font-size:13px;color:var(--ink-2);text-align:center}
+/* countdown: big numbers */
+.hero{background:#0B7A8C;color:#fff;border-radius:var(--r-l);padding:18px 16px;display:grid;gap:12px}
+.hero-k,.hero-sub{margin:0;font-size:14px;opacity:.9}
+.cd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cd div{background:rgba(255,255,255,.14);border-radius:14px;padding:12px 0 8px;display:grid;justify-items:center;gap:4px}
+.cd b{font:800 40px/1 var(--font-num);font-variant-numeric:tabular-nums}
+.cd div:first-child b{color:#FFD9CC}
+.cd span{font-size:12px;opacity:.85}
+.cd.msg{grid-template-columns:1fr}
+.cd.msg div{padding:16px 0}
+.cd.msg b{font-size:24px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px}
+.kv dt{color:var(--ink-2)} .kv dd{margin:0}
+.pill{display:inline-block;justify-self:start;border-radius:999px;padding:2px 10px;font:700 12px var(--font-num);background:var(--accent-soft);color:var(--accent)}
+/* page buttons map onto ui.css: .btn = primary, .btn.ghost = secondary */
+.btn:not(.ghost){background:var(--accent);color:var(--on-accent)}
+.btn.small{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px;justify-self:start}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+input[type=text],input[type=number],select,textarea{min-height:44px;background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:0 12px;min-width:0;font-size:16px}
+textarea{padding:10px 12px}
+#cnyIn,#vndIn{font-family:var(--font-num)}
+#vndOut,#cnyOut{font:800 20px var(--font-num)}
+.c-flights{--fl-notch:var(--surface)}   /* flight cards sit on a white card here: tear-line notches use that colour */
+.flight{display:grid;gap:2px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.flight:first-of-type{border-top:0;padding-top:0}
+.flight b{font-size:15px}
+.flight a{display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.phr{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:14px}
+.phr span:nth-child(odd){font-weight:700}
+.phr i{display:block;font-style:normal;font-weight:600;font-size:13px;color:var(--accent);font-family:var(--font-num)}
+.phr span:nth-child(even){align-self:center;color:var(--ink-2)}
+/* checklist: one column per member */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,48px);align-items:center;gap:8px 4px;font-size:14px}
+.grid .h{font-size:12px;font-weight:700;color:var(--ink-2);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grid .h.me{color:var(--accent)}
+.grid label{display:flex;justify-content:center;min-height:36px;align-items:center}
+.grid input{width:22px;height:22px;accent-color:var(--good)}
+.prog{font:700 12px var(--font-num);text-align:center;color:var(--ink-2)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.task:first-child{border-top:0}
+.task input[type=checkbox]{width:22px;height:22px;accent-color:var(--good)}
+.task.done .t{text-decoration:line-through;color:var(--ink-2)}
+.task select{font-size:14px;min-height:36px}
+/* expenses */
+.form{display:grid;gap:10px}
+.form .two{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px}
+.chips{flex-wrap:wrap;overflow:visible}
+.exp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.exp:first-child{border-top:0}
+.exp .amt{text-align:right;font:800 15px var(--font-num)}
+.exp .meta{font-size:13px;color:var(--ink-2)}
+.exp .del{border:0;background:none;color:var(--bad);font-size:13px;padding:0;cursor:pointer;justify-self:end;min-height:32px}
+.bal{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px 12px;font-size:14px;font-family:var(--font-num)}
+.bal .pos{color:var(--good);font-weight:800;text-align:right} .bal .neg{color:var(--bad);font-weight:800;text-align:right}
+.xfer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:color-mix(in srgb,var(--good) 14%,var(--surface));border-radius:12px;padding:10px 12px 10px 14px;font-weight:700}
+.bal .r{text-align:right}
+/* ---------- AA 账单 ---------- */
+.aa-col{display:contents}
+.c-aame{order:1} .c-settle{order:2} .c-stats{order:3} .c-bal{order:4} .c-ledger{order:5}
+.num{font-family:var(--font-num)}
+.aa-xfers{display:grid;gap:8px}
+.xfer,.aa-me{flex-wrap:nowrap;font-size:15px} .xfer>span,.aa-me>span{min-width:0}
+.xfer .btn,.aa-me .btn{flex-shrink:0;min-height:34px;padding:0 10px;font-size:13px;gap:4px}
+.aa-me{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;font-size:16px}
+.aa-me.owe{background:color-mix(in srgb,var(--warn) 14%,var(--surface))} .aa-me.get{background:var(--accent-soft)}
+.aa-me.ok,.aa-clear{background:color-mix(in srgb,var(--good) 14%,var(--surface));color:var(--good);font-weight:700;justify-content:flex-start}
+.aa-clear{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px}
+.c-stats summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;list-style:none}
+.c-stats summary::-webkit-details-marker{display:none}
+.c-stats .chev{color:var(--ink-2);transition:transform .2s} .c-stats[open] .chev{transform:rotate(180deg)}
+.aa-bars{display:grid;gap:8px}
+.aa-bar{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px}
+.aa-bar .l{display:flex;align-items:center;gap:6px;font-weight:600} .aa-bar .l svg{color:var(--accent)}
+.aa-bar .track{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden} .aa-bar .track b{display:block;height:100%;background:var(--accent);border-radius:5px}
+.aa-bar .v{color:var(--ink-2);font-size:12px;white-space:nowrap}
+.aa-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:130px;margin-top:6px}
+.aa-day{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;height:100%;gap:3px;font-size:11px}
+.aa-day .col{width:70%;max-width:28px;display:flex;align-items:flex-end;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.aa-day .col b{display:block;width:100%;background:var(--coral);border-radius:6px 6px 0 0}
+.aa-day .d{color:var(--ink-2);font-family:var(--font-num)} .aa-day .v{color:var(--ink-2)}
+.aa-filters{display:grid;gap:8px} .aa-filters .chips{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+.aa-filters .chip{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;min-height:36px;font-size:13px}
+.exp{grid-template-columns:auto minmax(0,1fr) auto}
+.exp .ico{grid-row:span 2;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);color:var(--accent)}
+.exp .ico svg{width:18px;height:18px}
+.exp .meta.r{grid-column:2/-1;text-align:right}
+.exp .meta.r:empty{display:none}
+.exp .t{font-weight:600}
+.exp .acts{grid-column:2/-1;display:flex;justify-content:flex-end;gap:14px}
+.exp .del.edit{color:var(--accent)} .exp .del.armed{color:#fff;background:var(--bad);border-radius:8px;padding:0 10px}
+.exp.pay .ico{color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--surface))} .exp.pay .amt{color:var(--good)}
+.exp.done .amt{color:var(--ink-2)}
+.aa-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;background:var(--surface-2);color:var(--ink-2);font:700 11px var(--font)}
+.aa-cur{color:var(--warn);font-weight:700}
+.aa-dev code{font:12px var(--font-num);word-break:break-all;color:var(--ink)} .aa-dev button{border:0;background:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 4px}
+.aa-cats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.aa-cat{display:grid;justify-items:center;gap:2px;padding:8px 0;min-height:56px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink-2);font-size:11px;font-weight:700;cursor:pointer}
+.aa-cat svg{width:20px;height:20px}
+.aa-cat.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.aa-lbl{display:grid;gap:4px;font-size:13px;color:var(--ink-2);font-weight:600}
+.seg{display:inline-grid;grid-auto-flow:column;gap:2px;padding:3px;margin:6px 0 8px;border-radius:12px;background:var(--surface-2)}
+.seg button{border:0;background:none;min-height:36px;padding:0 14px;border-radius:9px;font-size:14px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.aa-sv{display:grid;grid-template-columns:72px minmax(0,1fr) 24px;gap:8px;align-items:center;margin-bottom:6px;font-size:14px;font-weight:600}
+.aa-sv input{font-family:var(--font-num)} .aa-sv em{font-style:normal;color:var(--ink-2)}
+#aaSplitHint.ok{color:var(--good);font-weight:700} #aaSplitHint.bad{color:var(--bad);font-weight:700}
+.aa-switch{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer} .aa-switch input{width:22px;height:22px;accent-color:var(--good);flex-shrink:0}
+.aa-sheet-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.aa-sheet-h h2{display:flex;align-items:center;gap:8px}
+.aa-x{width:40px;height:40px;border:0;border-radius:12px;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+#aaCopyFallback{width:100%;font:14px/1.5 var(--font-num);background:var(--surface-2);border-radius:12px;padding:10px}
+/* phone + tablet: the form is a bottom sheet opened by the floating button */
+#aaFab{position:fixed;right:16px;bottom:calc(var(--tabbar-h) + 16px);z-index:40;min-height:52px;padding:0 20px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+main.wrap:not(.aa-mode) #aaFab{display:none}
+main.wrap.aa-mode{padding-bottom:calc(100px + var(--tabbar-h))}
+.aa-sheet{position:fixed;left:0;right:0;bottom:0;z-index:1500;max-height:90dvh;overflow-y:auto;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding-bottom:var(--safe-b);background:var(--surface);border-radius:var(--r-l) var(--r-l) 0 0;box-shadow:var(--shadow-2)}
+.aa-sheet.open{transform:none}
+.aa-sheet .card{box-shadow:none;border-radius:0}
+#aaBackdrop{position:fixed;inset:0;z-index:1400;background:rgba(10,20,25,.45)}
+#aaRepay,#namesDlg{position:fixed;inset:0;z-index:2100;background:rgba(10,20,25,.45);display:grid;align-items:end;justify-items:center}
+#aaRepay[hidden],#namesDlg[hidden]{display:none}
+.aa-rp{width:100%;max-width:520px;border-radius:var(--r-l) var(--r-l) 0 0;padding-bottom:calc(16px + var(--safe-b))}
+@media (min-width:768px){ #aaRepay,#namesDlg{align-items:center} .aa-rp{border-radius:var(--r-l)} }
+/* desktop bills layout lives in the ≥1200px block above; here only what the sheet needs */
+@media (min-width:1200px){
+  #aaFab,#aaBackdrop{display:none!important}
+  .aa-sheet{position:static;transform:none;max-height:none;overflow:visible;background:none;box-shadow:none;border-radius:0;padding:0}
+  .aa-sheet .card{box-shadow:var(--shadow-1);border-radius:var(--r-l)}
+  .aa-sheet .aa-x{display:none}
+  main.wrap.aa-mode{padding-bottom:40px}
+}
+@media (min-width:768px) and (max-width:1199px){ main.wrap.aa-mode>section[data-panel="aa"] .card{grid-column:span 12} }
+.empty{padding:12px 0}
+.lk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:12px 0;border-top:1px solid var(--line)}
+.lk:first-of-type{border-top:0}
+.lk a.t{font-weight:700;font-size:15px;word-break:break-word}
+.lk .meta{font-size:13px;color:var(--ink-2)}
+#lkList{display:grid;gap:14px;align-content:start}
+#toast{position:fixed;left:50%;bottom:calc(20px + var(--tabbar-h));transform:translate(-50%,16px);opacity:0;z-index:3000;background:#13202B;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;max-width:92vw;text-align:center;pointer-events:none;transition:opacity .25s,transform .25s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+/* tablet: two-column dashboard, every section visible */
+@media (min-width:768px){
+  .wrap{max-width:1600px;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;padding:20px 24px 40px;align-items:start}
+  section.wrap,section.wrap[hidden]{display:contents!important}
+  /* the 行李 view replaces the dashboard instead of joining it */
+  main.wrap>section[data-panel="packing"][hidden],main.wrap.pk-mode>section[data-panel]:not([data-panel="packing"]),main.wrap.pk-mode>.c-hero,
+  main.wrap>section[data-panel="aa"][hidden],main.wrap.aa-mode>section[data-panel]:not([data-panel="aa"]),main.wrap.aa-mode>.c-hero{display:none!important}
+  main.wrap>*,section.wrap>*{grid-column:span 6}
+  main.wrap>.c-hero,main.wrap>#who,section.wrap>.c-personal,section.wrap>.c-flights{grid-column:span 12}
+  #toast{bottom:24px}
+}
+/* ---------- desktop (≥1200px): one capsule tab at a time, aligned rows, larger type ---------- */
+/* desktop-only pieces stay hidden on phones and tablets */
+.c-progress,.c-aaov,.aa-ptabs,.f-cur,.f-rate,.f-payer,.rp-av,.pk-toc,.aa-st-more,#aaSearch,.aa-gh,.aa-none,.lk-empty svg,.lk-empty .sub,.grid .h .av,.chip .av{display:none}
+.gr{display:contents}
+.ph{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ph b{font-weight:700} .ph i{grid-column:1;display:block;font-style:normal;font-weight:600;font-size:13px;color:var(--accent);font-family:var(--font-num)}
+.ph span{grid-column:2;grid-row:1/3;align-self:center;color:var(--ink-2)}
+.phr{grid-template-columns:1fr}
+@media (min-width:1200px){
+  main.wrap{font-size:15px;align-items:stretch}
+  .card h2{font-size:17px} .sub,.exp .meta,.kv{font-size:13px} .kv{font-size:14px}
+  main.wrap>section.wrap[hidden]{display:none!important}
+  main.wrap:not(.tab-info)>.c-hero{display:none!important}
+  /* tabs with their own grid: undo the tablet dashboard's span-6 cards */
+  main.wrap>section.wrap:not([data-panel="info"])>*{grid-column:auto}
+  main.wrap>#who{grid-column:span 12;order:0}
+  /* 基础信息: four aligned rows */
+  main.wrap>.c-hero{grid-column:span 8;order:1}
+  section[data-panel="info"]>.c-money{grid-column:span 4;order:2}
+  section[data-panel="info"]>.c-flights{grid-column:span 12;order:3}
+  section[data-panel="info"]>.c-hotels{grid-column:span 8;order:4}
+  section[data-panel="info"]>.c-progress{display:grid;grid-column:span 4;order:5}
+  section[data-panel="info"]>.c-phr{grid-column:span 6;order:6}
+  section[data-panel="info"]>.c-tips{grid-column:span 3;order:7}
+  section[data-panel="info"]>.c-sos{grid-column:span 3;order:8}
+  .hero{background:var(--accent-soft);color:var(--accent);grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"k cd" "sub cd";align-items:center;padding:20px 24px;column-gap:24px}
+  .hero-k{grid-area:k;align-self:end;font-size:15px;font-weight:700;opacity:1} .hero-sub{grid-area:sub;align-self:start;font-size:14px;opacity:.85}
+  .cd{grid-area:cd;grid-template-columns:repeat(4,92px)} .cd div{background:var(--surface);padding:12px 0 8px}
+  .cd b{font-size:40px;color:var(--accent)} .cd div:first-child b{color:var(--coral)} .cd span{color:var(--ink-2);opacity:1}
+  .cd.msg{grid-template-columns:auto} .cd.msg b{font-size:24px}
+  .prg{display:grid;gap:12px}
+  .pr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center}
+  .pr .av{grid-row:span 3} .pr .nm{font-weight:700;font-size:14px}
+  .pb{display:grid;grid-template-columns:34px minmax(0,1fr) 54px;gap:8px;align-items:center;border:0;background:none;padding:2px 0;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer;text-align:left;border-radius:6px}
+  .pb:hover{color:var(--accent)} .pb .track{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden} .pb .track b{display:block;height:100%;background:var(--p);border-radius:4px}
+  .pb .pv{text-align:right;font-size:13px}
+  .phr{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .ph{display:grid;grid-template-columns:1fr;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);transition:background .15s}
+  .ph:hover{background:var(--accent-soft)} .ph b{font-size:15px} .ph i{font-size:13px} .ph span{grid-column:1;grid-row:auto;font-size:13px}
+  /* 准备清单: centred table with a sticky header + group column */
+  main.wrap>section[data-panel="check"]{display:grid!important;grid-column:1/-1;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+  .grid{display:block;max-width:860px;width:100%;margin:0 auto;font-size:15px}
+  .gr{display:grid;grid-template-columns:minmax(0,420px) repeat(4,88px);justify-content:center;align-items:center;min-height:48px;border-top:1px solid var(--line);border-radius:8px}
+  .gr:not(.hd):not(.ft):hover{background:var(--surface-2)}
+  .gr>div:first-child{padding-left:10px}
+  .gr.hd{position:sticky;top:calc(var(--tn-top-h,0px) + var(--top2-h,0px));z-index:3;background:var(--surface);border-top:0;min-height:64px}
+  .grid .h{display:grid;justify-items:center;gap:3px;font-size:13px} .grid .h .av{display:grid}
+  .grid label{min-height:48px} .prog{font-size:14px}
+  .task:hover{background:var(--surface-2)} .task{border-radius:8px;padding:10px 6px}
+  /* 攻略收藏 */
+  main.wrap>section[data-panel="links"]{display:grid!important;grid-column:1/-1;grid-template-columns:380px minmax(0,1fr);gap:16px;align-items:start}
+  .c-lkadd{position:sticky;top:calc(var(--tn-top-h,0px) + var(--top2-h,0px) + 16px)}
+  #lkList>.card:not(.lk-empty){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #lkList>.card:not(.lk-empty)>h2{grid-column:1/-1}
+  #lkList .lk{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .lk-empty{min-height:320px;place-content:center;justify-items:center;text-align:center;gap:6px}
+  .lk-empty svg{display:block;width:40px;height:40px;color:var(--ink-2)} .lk-empty .sub{display:block}
+  /* 行李: category list · table · checkout */
+  main.wrap>section[data-panel="packing"]{display:grid!important;grid-column:1/-1;grid-template-columns:160px minmax(0,1fr) 340px;gap:16px;align-items:start}
+  main.wrap>section[data-panel="packing"][hidden]{display:none!important}
+  main.wrap>section>.c-pk-main,main.wrap>section>.c-pk-side{grid-column:auto}
+  .pk-toc{display:grid;gap:2px;position:sticky;top:calc(var(--tn-top-h,0px) + var(--top2-h,0px) + 16px)}
+  .pk-toc a{display:flex;justify-content:space-between;gap:6px;padding:9px 10px;border-radius:10px;color:var(--ink);font-size:14px;font-weight:600}
+  .pk-toc a .num{color:var(--ink-2);font-size:12px} .pk-toc a.ok .num{color:var(--good)}
+  .pk-toc a:hover{background:var(--surface-2)} .pk-toc a.on{background:var(--accent-soft);color:var(--accent)}
+  .pk-bar{position:sticky;top:calc(var(--tn-top-h,0px) + var(--top2-h,0px));z-index:4;display:flex;align-items:center;gap:12px;margin:0 -16px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .pk-rings{display:flex!important;gap:4px}
+  .pk-ring{grid-template-columns:auto auto;align-items:center;justify-items:start;gap:8px;padding:4px 10px 4px 4px}
+  .pk-ring svg{width:44px;height:44px} .pk-ring .c{display:flex;align-items:center;justify-content:center;top:4px;left:4px;width:44px;height:44px;font-size:12px} .pk-ring .c small{font-size:10px}
+  .pk-ring .nm{font-size:14px}
+  #pkStart{margin-left:auto;align-self:center}
+  .pk-th{top:calc(var(--tn-top-h,0px) + var(--top2-h,0px) + 61px)!important;font-size:14px}
+  .pk-tr{font-size:15px} .pk-n{font-size:14px} .pk-w{font-size:12px}
+  .pk-tc{scroll-margin-top:200px}
+  .pk-tc-b{display:flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;min-height:40px}
+  .pk-tc-b .chev{color:var(--ink-2);transition:transform .2s} .pk-tc-b[aria-expanded="false"] .chev{transform:rotate(-90deg)} .pk-tc-b .ok{color:var(--good)}
+  .pk-tc.done{opacity:.8}
+  main.wrap>section>.c-pk-side{position:sticky;top:calc(var(--tn-top-h,0px) + var(--top2-h,0px) + 16px)}
+  /* 账单: overview · ledger (60%) · sticky panel (40%) */
+  main.wrap.aa-mode>section[data-panel="aa"]{display:grid!important;grid-column:1/-1;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+  main.wrap.aa-mode>section[data-panel="aa"]>.c-aaov{display:grid;grid-column:1/-1;gap:14px}
+  main.wrap.aa-mode>section[data-panel="aa"]>.aa-l{display:none}
+  main.wrap.aa-mode>section[data-panel="aa"]>.aa-m{display:grid;gap:16px;align-content:start}
+  main.wrap.aa-mode>section[data-panel="aa"]>.aa-r{display:grid;gap:12px;align-content:start;position:sticky;top:calc(var(--tn-top-h,0px) + 16px);max-height:calc(100dvh - var(--tn-top-h,0px) - 32px);overflow-y:auto;padding:2px}
+  .aa-col .card{order:0}
+  .ovs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .ov{display:grid;gap:2px;padding:4px 8px} .ov .k{font-size:13px;color:var(--ink-2);font-weight:600}
+  .ov .v{font:800 30px/1.15 var(--font-num)} .ov .v.pos{color:var(--good)} .ov .v.neg{color:var(--coral)}
+  .linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;justify-self:start}
+  .ovm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .ovp{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:14px}
+  .ovp.me{box-shadow:inset 0 0 0 2px var(--accent)} .ovp .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ovp b{font:800 15px var(--font-num)} .ovp b.pos{color:var(--good)} .ovp b.neg{color:var(--coral)}
+  .aa-ptabs{display:grid;grid-template-columns:repeat(3,1fr);margin:0}
+  .aa-ptabs button{min-height:40px;font-size:15px}
+  #aaPanel>.aa-sheet,#aaPanel>.aa-rp-slot,#aaPanel>.c-settle{display:none}
+  #aaPanel[data-ptab="add"]>.aa-sheet,#aaPanel[data-ptab="repay"]>.aa-rp-slot,#aaPanel[data-ptab="settle"]>.c-settle{display:grid}
+  .aa-rp-slot .aa-rp{max-width:none;border-radius:var(--r-l);padding-bottom:16px;box-shadow:var(--shadow-1)}
+  .aa-rp-slot .rp-sel{display:none} .rp-av{display:grid;gap:6px}
+  .aa-none{display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:color-mix(in srgb,var(--good) 12%,var(--surface));color:var(--good);font-weight:700}
+  .c-stats summary h2{flex:1} .aa-st-more{display:inline;font-size:14px;color:var(--accent);font-weight:700;margin-right:6px}
+  .c-stats[open] .aa-st-more{display:none}
+  .aa-tool{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px} #aaSearch{display:block;min-height:44px;background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:0 12px;font-size:15px}
+  .aa-gh{display:block;margin:14px 0 2px;padding:6px 0;font:700 14px var(--font-num);color:var(--ink-2);border-bottom:1px solid var(--line)}
+  .aa-gh+.exp{border-top:0}
+  .exp{font-size:15px} .exp .amt{font-size:16px;font-variant-numeric:tabular-nums} .aa-tag{font-size:12px}
+  .aa-raterow{display:none!important}
+  /* 记一笔 form: amount first */
+  #expForm .f-amt{order:1;grid-template-columns:1fr} #expCur{display:none}
+  #expAmt{font:800 28px var(--font-num);min-height:60px}
+  #expForm .f-cur{display:inline-grid;order:2;justify-self:start;margin:0}
+  #expForm .f-rate{display:block;order:3;margin-top:-4px}
+  #expForm .f-title{order:4} #expForm .f-cats{order:5;grid-template-columns:repeat(3,1fr)}
+  .aa-cat{min-height:64px;font-size:13px} .aa-cat svg{width:22px;height:22px}
+  #expForm .f-dp{order:6;grid-template-columns:1fr} .f-payer-sel{display:none!important}
+  #expForm .f-payer{display:grid;gap:6px;order:7}
+  #expForm .f-split{order:8} #expForm .f-note{order:9} #expForm .f-settled{order:10} #expForm .f-act{order:11}
+  .aa-avs{display:flex;flex-wrap:wrap;gap:6px}
+  .aa-av{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:3px 12px 3px 4px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer}
+  .aa-av.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft)}
+  /* 谁来分: unselected = grey and faded, selected = colour */
+  #expSplit .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 12px 3px 4px;min-height:40px;background:var(--surface-2);color:var(--ink-2);border:1.5px solid transparent;opacity:.55}
+  #expSplit .chip .av{display:grid;filter:grayscale(1)}
+  #expSplit .chip.on{opacity:1;background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+  #expSplit .chip.on .av{filter:none}
+  .rp-av .aa-av.on{border-color:var(--accent)}
+}
+/* 账单 page: no countdown at any width */
+main.wrap.aa-mode>.c-hero{display:none}
+/* ---------- 行李 ---------- */
+.pk-warn{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));font-size:14px;font-weight:600}
+.pk-warn svg{color:var(--warn);flex-shrink:0;margin-top:1px}
+.pk-rings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pk-ring{display:grid;justify-items:center;gap:4px;border:0;background:none;padding:6px 0;border-radius:14px;cursor:pointer;color:var(--ink);position:relative}
+.pk-ring.on{background:var(--surface-2)}
+.pk-ring svg{width:64px;height:64px;transform:rotate(-90deg)}
+.pk-ring circle{fill:none;stroke-width:5}
+.pk-ring .bg{stroke:var(--line)} .pk-ring .fg{stroke:var(--p);stroke-linecap:round;transition:stroke-dashoffset .4s}
+.pk-ring .c{position:absolute;top:6px;height:64px;display:grid;place-items:center;font:800 16px var(--font-num);white-space:nowrap}
+.pk-ring .c small{font-size:11px;color:var(--ink-2);font-weight:700}
+.pk-ring .c svg{width:26px;height:26px;transform:none;color:var(--p)}
+.pk-ring .nm{font-size:13px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-cat{border-top:1px solid var(--line)}
+.pk-cat:first-child{border-top:0}
+.pk-cat-h{display:flex;align-items:center;gap:8px;width:100%;min-height:52px;border:0;background:none;padding:0;color:var(--ink);font-size:15px;cursor:pointer;text-align:left}
+.pk-cat-h b{flex:1} .pk-cat-h svg{color:var(--accent)} .pk-cat-h .chev{color:var(--ink-2);transition:transform .2s}
+.pk-cat.open .chev{transform:rotate(180deg)}
+.pk-items{display:none;padding-bottom:10px}
+.pk-cat.open .pk-items{display:grid;gap:2px}
+.pk-n{font:700 13px var(--font-num);color:var(--ink-2)} .pk-n.ok{color:var(--good)}
+.pk-it{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;min-height:52px}
+.t .l{font-weight:600} .t small{display:block;font-size:12px;color:var(--ink-2)} .t small.strong{color:var(--coral);font-weight:700}
+.pk-w{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;border-radius:6px;padding:0 6px;vertical-align:1px;background:var(--surface-2);color:var(--ink-2)}
+.pk-w.carry{background:var(--accent-soft);color:var(--accent)}
+.pk-w.own{background:color-mix(in srgb,var(--p) 16%,transparent);color:var(--p)}
+.pk-it.done .l,.pk-it.skip .l{color:var(--ink-2)} .pk-it.skip .l{text-decoration:line-through}
+.pk-box{width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;color:transparent;cursor:pointer;padding:0}
+.pk-box svg{width:18px;height:18px}
+.done>.pk-box,.pk-big.done .pk-box{background:var(--good);border-color:var(--good);color:#fff}
+.pk-skip{border:0;background:none;color:var(--ink-2);font-size:13px;font-weight:600;min-height:40px;padding:0 6px;cursor:pointer}
+.pk-skip[aria-pressed="true"]{color:var(--ink);text-decoration:line-through}
+.pk-x{border:0;background:none;color:var(--ink-2);min-height:40px;padding:0 4px;cursor:pointer} .pk-x svg{width:16px;height:16px}
+.pk-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:6px}
+.pk-add input{min-height:40px!important;font-size:15px!important}
+.pk-who{display:flex;align-items:center;gap:8px;font-weight:700}
+.pk-co{display:grid;gap:2px}
+.pk-co h3{display:flex;align-items:center;gap:6px;font-size:15px;margin:8px 0 4px} .pk-co h3 .pk-n{margin-left:auto}
+.pk-co-it{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;cursor:pointer}
+.pk-co-it input{width:22px;height:22px;accent-color:var(--good)}
+.pk-co-it input:checked+span{color:var(--ink-2);text-decoration:line-through}
+#pkStart{position:fixed;left:16px;right:16px;bottom:calc(var(--tabbar-h) + 12px);z-index:40;min-height:52px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+main.wrap.pk-mode{padding-bottom:calc(100px + var(--tabbar-h))}
+#pkTable{display:none}
+#pkCheck{position:fixed;inset:0;z-index:2000;background:var(--bg);overflow-y:auto;padding:calc(12px + var(--safe-t)) 16px calc(24px + var(--safe-b))}
+#pkCheck[hidden]{display:none}
+.pk-check-in{max-width:560px;margin:0 auto;display:grid;gap:12px}
+.pk-check-x{justify-self:end}
+.pk-check-in h2{display:flex;align-items:center;gap:8px;font-size:24px} .pk-check-in h2 svg{color:var(--accent)}
+.pk-step{margin:0;color:var(--ink-2);font-size:14px} .pk-step b{font-family:var(--font-num);color:var(--accent)}
+.pk-big-list,.pk-pick{display:grid;gap:10px}
+.pk-big-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.pk-big{display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font-size:17px;text-align:left;cursor:pointer;width:100%}
+.pk-big.done{border-color:var(--good);background:color-mix(in srgb,var(--good) 10%,var(--surface))}
+.pk-big.skip .l{text-decoration:line-through;color:var(--ink-2)}
+.pk-skip.big{min-height:56px}
+.pk-done{display:grid;justify-items:center;gap:12px;text-align:center;padding-top:18vh}
+.pk-done-i{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pk-done-i svg{width:44px;height:44px}
+@media (min-width:768px){
+  main.wrap>section>.c-pk-main,main.wrap>section>.c-pk-side{grid-column:span 12}
+  #pkStart{position:static;justify-self:start;box-shadow:none}
+  main.wrap.pk-mode{padding-bottom:40px}
+  #pkList,.pk-phone-only{display:none!important}
+  #pkTable{display:grid}
+  .pk-tr{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,88px);align-items:center;gap:4px;min-height:44px;border-top:1px solid var(--line);font-size:14px}
+  .pk-tr>span:not(.t){display:flex;justify-content:center;align-items:center;gap:2px}
+  .pk-th{position:sticky;top:calc(var(--tn-top-h,0px) + 57px);background:var(--surface);z-index:2;border-top:0;font-size:13px;font-weight:700}
+  .pk-th>span{flex-direction:column;gap:2px!important} .pk-th .me{color:var(--accent)}
+  .pk-tc{background:var(--surface-2);border-radius:10px;border-top:0;margin-top:10px;padding:0 8px} .pk-tc b{display:flex;align-items:center;gap:6px} .pk-tc svg{color:var(--accent)}
+  .pk-tr .t{padding-left:8px}
+  .pk-cell{width:36px;height:36px;border-radius:10px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:#fff;padding:0}
+  .pk-cell svg{width:18px;height:18px}
+  .pk-cell.done{background:var(--good);border-color:var(--good)}
+  .pk-cell.skip{background:var(--surface-2);color:var(--ink-2);border-style:dashed}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<script src="core.js"></script>
+<script src="modules/nav.js" data-title="工具箱"></script>
+<header class="top"><div class="top-in">
+    <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="info" role="tab"><i data-lucide="info"></i>基础信息</button>
+    <button class="tab" data-tab="check" role="tab"><i data-lucide="list-checks"></i>准备清单</button>
+    <button class="tab" data-tab="links" role="tab"><i data-lucide="bookmark"></i>攻略收藏</button>
+    <button class="tab" data-tab="packing" role="tab"><i data-lucide="luggage"></i>行李</button>
+  </div>
+</div></header>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<main class="wrap">
+  <section class="hero c-hero" aria-label="出发倒计时">
+    <p class="hero-k" id="cdLabel">出发倒计时</p>
+    <div class="cd" id="countdown" role="timer" aria-live="off">
+      <div><b id="cdD">—</b><span>天</span></div>
+      <div><b id="cdH">—</b><span>时</span></div>
+      <div><b id="cdM">—</b><span>分</span></div>
+      <div><b id="cdS">—</b><span>秒</span></div>
+    </div>
+    <p class="hero-sub" id="heroSub"></p>
+  </section>
+  <div class="status" id="who">正在连接数据…</div>
+
+  <!-- ================= 基础信息 ================= -->
+  <section data-panel="info" class="wrap" style="padding:0">
+    <div class="card c-money">
+      <h2><i data-lucide="banknote"></i>钱和汇率</h2>
+      <p class="sub" id="rateLine">—</p>
+      <div class="row">
+        <input type="number" id="cnyIn" inputmode="decimal" placeholder="人民币" style="width:120px" aria-label="人民币金额">
+        <span>元 ≈</span><b id="vndOut">—</b>
+      </div>
+      <div class="row">
+        <input type="number" id="vndIn" inputmode="numeric" placeholder="当地货币" style="width:140px" aria-label="当地货币金额">
+        <span id="locSym">≈</span><b id="cnyOut">—</b>
+      </div>
+      <p class="sub" id="moneyNote"></p>
+    </div>
+
+    <div class="card c-flights">
+      <h2><i data-lucide="plane"></i>成员和航班</h2>
+      <div id="flights"></div>
+    </div>
+
+    <div class="card c-hotels">
+      <h2><i data-lucide="bed-double"></i>住宿</h2>
+      <div id="hotels"></div>
+    </div>
+    <div class="card c-progress" id="progCard">
+      <h2><i data-lucide="chart-no-axes-column-increasing"></i>准备进度</h2>
+      <div id="progList" class="prg"></div>
+    </div>
+
+
+
+
+
+    <div class="card c-phr" id="phrCard">
+      <h2><i data-lucide="languages"></i><span id="phrTitle">常用语</span></h2>
+      <p class="sub">拼音是近似读音，说慢一点、配合手势基本能懂。点一下可以复制。</p>
+      <div class="phr" id="phr"></div>
+    </div>
+    <div class="card c-tips" id="tipsCard">
+      <h2><i data-lucide="lightbulb"></i>小知识</h2>
+      <dl class="kv" id="tips"></dl>
+    </div>
+    <div class="card c-sos">
+      <h2><i data-lucide="phone"></i><span id="sosTitle">紧急电话</span></h2>
+      <dl class="kv" id="sos"></dl>
+    </div>
+  </section>
+
+  <!-- ================= 准备清单 ================= -->
+  <section data-panel="check" class="wrap" style="padding:0" hidden>
+    <div class="card c-personal">
+      <h2><i data-lucide="list-checks"></i>每个人自己准备</h2>
+      <p class="sub">办好了就在自己那一列打勾，大家都能看到进度。</p>
+      <div class="grid" id="personal"></div>
+    </div>
+    <div class="card c-group">
+      <h2><i data-lucide="clipboard-list"></i>集体要办的</h2>
+      <p class="sub">选一下谁负责，办好了打勾。</p>
+      <div id="group"></div>
+    </div>
+  </section>
+
+  <!-- ================= AA 账单（逻辑在 bills.js） ================= -->
+  <!-- phone: the columns are display:contents and the cards are ordered by CSS; desktop: overview + ledger + sticky panel -->
+  <section data-panel="aa" class="wrap" style="padding:0" hidden>
+    <div class="card c-aaov" id="aaOverview"></div>
+    <div class="aa-col aa-l">
+      <div class="card c-aame" id="aaMe" aria-live="polite"></div>
+      <div class="card c-bal">
+        <h2><i data-lucide="users"></i>每个人的余额</h2>
+        <p class="sub">余额 = 垫付的 − 应摊的 + 还出去的 − 收到的还款。正数是别人欠你。</p>
+        <div class="bal" id="balances"></div>
+      </div>
+    </div>
+    <div class="aa-col aa-m">
+      <details class="card c-stats" open>
+        <summary><h2><i data-lucide="chart-column"></i>统计</h2><span class="aa-st-more">查看统计</span><i data-lucide="chevron-down" class="chev"></i></summary>
+        <div id="aaStats"></div>
+      </details>
+      <div class="card c-ledger">
+        <h2><i data-lucide="receipt"></i>账本</h2>
+        <div class="aa-filters" id="aaFilters"></div>
+        <div id="expList"><p class="empty">还没有记账。</p></div>
+        <p class="sub">只有记账的那台手机能修改和删除。新记的账会锁定当时的汇率，以后更新汇率不影响。</p>
+        <button class="btn ghost small" id="aaLock" hidden></button>
+        <p class="sub aa-dev" id="aaDev"></p>
+        <div class="row aa-raterow"><span class="sub" id="rateLine2">—</span><button class="btn ghost small" id="refreshRates"><i data-lucide="refresh-cw" class="i18"></i>更新成最新汇率</button></div>
+      </div>
+    </div>
+    <div class="aa-col aa-r" id="aaPanel" data-ptab="add">
+      <div class="aa-ptabs seg" role="tablist" aria-label="操作">
+        <button type="button" role="tab" data-ptab="add">记一笔</button><button type="button" role="tab" data-ptab="repay">记还款</button><button type="button" role="tab" data-ptab="settle">结算</button>
+      </div>
+      <div class="aa-sheet" id="aaFormBox" role="dialog" aria-labelledby="aaFormTitle">
+        <div class="card c-add">
+          <div class="aa-sheet-h"><h2 id="aaFormTitle">记一笔</h2><button type="button" class="aa-x" data-aaclose aria-label="关闭"><i data-lucide="x"></i></button></div>
+          <form class="form" id="expForm">
+            <input type="text" id="expTitle" class="f-title" maxlength="60" placeholder="花在什么上，例如：酒店房费" aria-label="用途">
+            <div class="two f-amt">
+              <input type="number" id="expAmt" inputmode="decimal" step="any" min="0" placeholder="金额" aria-label="金额">
+              <select id="expCur" aria-label="币种"></select>
+            </div>
+            <div class="seg f-cur" id="aaCurSeg" role="group" aria-label="币种"></div>
+            <p class="sub f-rate" id="aaRateMini"></p>
+            <div class="aa-cats f-cats" id="aaCats" role="group" aria-label="分类"></div>
+            <div class="two f-dp"><label class="aa-lbl">日期<select id="expDay"></select></label><label class="aa-lbl f-payer-sel">谁付的<select id="expPayer"></select></label></div>
+            <div class="f-payer"><span class="muted">谁付的</span><div class="aa-avs" id="aaPayerAv" role="radiogroup" aria-label="谁付的"></div></div>
+            <div class="f-split"><span class="muted">谁来分</span>
+              <div class="seg" id="aaMode" role="group" aria-label="分摊方式"><button type="button" data-mode="equal">平分</button><button type="button" data-mode="shares">按份数</button><button type="button" data-mode="amounts">按金额</button></div>
+              <div id="expSplit"></div><p class="sub" id="aaSplitHint"></p></div>
+            <input type="text" id="expNote" class="f-note" maxlength="120" placeholder="备注（可不填）" aria-label="备注">
+            <label class="aa-switch f-settled"><input type="checkbox" id="expSettled"><span>当场已经各付各的（只记录，不参与结算）</span></label>
+            <div class="row f-act"><button class="btn" id="expAdd" type="submit"><i data-lucide="plus" class="i18"></i>记一笔</button>
+              <button class="btn ghost small" type="button" id="aaCancelEdit" hidden>取消修改</button></div>
+          </form>
+        </div>
+      </div>
+      <div class="aa-rp-slot" id="aaRepaySlot"></div>
+      <div class="card c-settle">
+        <h2><i data-lucide="scale"></i>建议转账</h2>
+        <p class="sub" id="aaTotal">—</p>
+        <div id="transfers" class="aa-xfers"></div>
+        <div class="row"><button class="btn ghost small" id="aaCopy"><i data-lucide="clipboard-copy" class="i18"></i>复制结算单</button>
+          <button class="btn ghost small" id="aaRepayBtn"><i data-lucide="arrow-right-left" class="i18"></i>记一笔还款</button></div>
+        <textarea id="aaCopyFallback" rows="6" readonly hidden aria-label="结算单文字"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="aaFab" type="button"><i data-lucide="plus" class="i18"></i>记一笔</button>
+    <div id="aaBackdrop" hidden></div>
+  </section>
+
+  <!-- ================= 攻略收藏 ================= -->
+  <section data-panel="links" class="wrap" style="padding:0" hidden>
+    <div class="card c-lkadd">
+      <h2><i data-lucide="bookmark-plus"></i>加一条攻略</h2>
+      <p class="sub">把小红书的分享内容整段粘贴进来就行，会自动识别链接和标题。其他网站的链接也可以。</p>
+      <form class="form" id="lkForm">
+        <textarea id="lkText" rows="3" placeholder="例如：越南电子签证指南｜小白友好… https://xhslink.cn/… 打开【小红书】…" aria-label="分享内容或链接" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;color:inherit;resize:vertical"></textarea>
+        <input type="text" id="lkTitle" maxlength="80" placeholder="标题（可不填）" aria-label="标题">
+        <div class="chips" id="lkTags"></div>
+        <button class="btn" id="lkAdd" type="submit">收藏</button>
+      </form>
+    </div>
+    <div id="lkList" class="c-lklist"><div class="card"><p class="empty">还没有收藏。</p></div></div>
+  </section>
+
+  <!-- ================= 行李 ================= -->
+  <section data-panel="packing" class="wrap" style="padding:0" hidden>
+    <nav class="pk-toc" id="pkToc" aria-label="分类目录"></nav>
+    <div class="card c-pk-main">
+      <h2><i data-lucide="luggage"></i>出发前行李检查</h2>
+      <div class="pk-warn"><i data-lucide="triangle-alert"></i><span>越捷等廉航的基础票价可能只含 7kg 手提行李，出发前确认自己的票含不含托运。</span></div>
+      <div class="pk-bar">
+        <div class="pk-rings" id="pkRings" role="group" aria-label="每个人的进度，点头像切换"></div>
+        <button class="btn btn-primary" id="pkStart"><i data-lucide="list-checks" class="i18"></i>开始出发前检查</button>
+      </div>
+      <p class="sub">打勾 = 已带，「不带」= 不需要（也算完成），再点一次取消。自己加的东西只出现在自己那一列。</p>
+      <div id="pkList"></div>
+      <div id="pkTable" role="table" aria-label="每个人的行李清单"></div>
+    </div>
+    <div class="card c-pk-side">
+      <h2><i data-lucide="door-open"></i>退房检查</h2>
+      <div class="pk-who" id="pkCoWho"></div>
+      <p class="sub">每次退房单独打勾，两次互不影响。</p>
+      <div id="pkCo"></div>
+    </div>
+  </section>
+</main>
+<div id="namesDlg" class="aa-modal-bg" role="dialog" aria-modal="true" aria-labelledby="namesTitle" hidden><div class="card aa-rp">
+  <div class="aa-sheet-h"><h2 id="namesTitle"><i data-lucide="users"></i>修改成员名字</h2><button type="button" class="aa-x" data-namesclose aria-label="关闭"><i data-lucide="x"></i></button></div>
+  <p class="sub">名字改了以后，清单和账本会跟着变，以前的账不受影响。同行的人看到的是同一份。</p>
+  <div id="nameEdit" class="form"></div>
+  <button class="btn" id="saveNames" type="button">保存名字</button>
+</div></div>
+<div id="aaRepay" role="dialog" aria-modal="true" aria-labelledby="rpTitle" hidden><form class="card aa-rp" id="rpForm">
+  <div class="aa-sheet-h"><h2 id="rpTitle"><i data-lucide="arrow-right-left"></i>记一笔还款</h2><button type="button" class="aa-x" data-rpclose aria-label="关闭"><i data-lucide="x"></i></button></div>
+  <div class="two rp-sel"><label class="aa-lbl">谁还<select id="rpFrom"></select></label><label class="aa-lbl">还给谁<select id="rpTo"></select></label></div>
+  <div class="rp-av"><span class="muted">谁还</span><div class="aa-avs" id="rpFromAv"></div><span class="muted">还给谁</span><div class="aa-avs" id="rpToAv"></div></div>
+  <div class="two"><input type="number" id="rpAmt" inputmode="decimal" step="any" min="0" placeholder="金额（可以先还一部分）" aria-label="金额">
+    <select id="rpCur" aria-label="币种"></select></div>
+  <div class="chips" id="rpMethods" role="group" aria-label="方式"></div>
+  <input type="text" id="rpNote" maxlength="60" placeholder="备注（可不填）" aria-label="备注">
+  <button class="btn" id="rpSave" type="submit"><i data-lucide="check" class="i18"></i>记下还款</button>
+</form></div>
+<div id="pkCheck" role="dialog" aria-modal="true" aria-label="出发前检查" hidden><div class="pk-check-in"><button class="btn ghost btn-sm pk-check-x" data-pkclose><i data-lucide="x" class="i18"></i>退出</button><div id="pkCheckIn" class="pk-check-in" style="max-width:none"></div></div></div>
+
+<script src="modules/flights.js"></script>
+<script src="modules/packing.js"></script>
+<script src="modules/money.js"></script>
+<script src="modules/bills.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// everything trip-specific is filled in from trips/{id} after Trip.start() (arrays are filled in place:
+// bills.js and packing.js keep references to them)
+const IDS = [];
+const DEFAULT_SETTINGS = { members: {}, rates: {}, ratesAt: 0 };
+const SYM = Trip.SYM;
+
+const HOTELS = [], GROUP = [], PERSONAL = [];   // from info/static (hotels, 集体要办的, personal checklist)
+let db = null, uid = null, settings = DEFAULT_SETTINGS, checks = {}, checksLoaded = false, me = "";
+let toastTimer = null;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2000); }
+const nm = id => settings.members?.[id] || id;
+const rate = c => c === "CNY" ? 1 : (settings.rates?.[c] || 1);
+const toCNY = (amt, c) => amt / rate(c);
+const fmt = (n, c) => ["VND", "KRW", "JPY"].includes(c) ? Math.round(n).toLocaleString("zh-CN") : (Math.round(n * 100) / 100).toLocaleString("zh-CN");
+const ready = () => !!(db && uid && Trip.canEdit);   // read-only visitors (link trips) can't write
+
+/* ---------- tabs: capsule secondary tabs, mirrored in the URL hash (#info / #packing …) ---------- */
+const TABS = ["info", "check", "aa", "links", "packing"];
+const wide = () => matchMedia("(min-width:768px)").matches;
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab, true)));
+function showTab(t, user) {
+  t = { tools: "info", bills: "aa" }[t] || t;
+  const mods = (Trip.trip || {}).modules || {};
+  if ((t === "aa" && mods.bills === false) || (t === "packing" && mods.packing === false)) t = "info";
+  if (!TABS.includes(t)) t = "info";
+  document.querySelectorAll(".tab").forEach(b => { b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-selected", b.dataset.tab === t); });
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== t);
+  const mainEl = document.querySelector("main.wrap");
+  TABS.forEach(x => mainEl.classList.toggle("tab-" + x, x === t));
+  mainEl.classList.toggle("pk-mode", t === "packing");
+  // 账单 is its own bottom-bar page: no capsule tabs, own title
+  document.querySelector("main.wrap").classList.toggle("aa-mode", t === "aa");
+  document.querySelector("header.top").hidden = t === "aa";
+  if (window.tripNav) tripNav.setTitle(t === "aa" ? "AA 账单" : `${(Trip.trip || {}).title || ""}工具箱`);
+  const pub = { info: "tools", aa: "bills" }[t] || t;   // shared addresses: #tools / #bills / #packing
+  if (location.hash !== "#" + pub) history.replaceState(null, "", "#" + pub);
+  if (window.tripNav) tripNav.update();
+  try { localStorage.setItem("trip-tab", t); } catch (e) {}
+  // desktop shows the dashboard at once, so a tab there scrolls to its first card
+  if (user && wide() && !matchMedia("(min-width:1200px)").matches && t !== "packing" && t !== "aa") { const c = document.querySelector(`[data-panel="${t}"] > *`); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  else if (user) scrollTo({ top: 0 });
+}
+addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+{ // --top2-h: height of the capsule tab bar (0 when hidden), used by sticky table headers on desktop
+  const hdr = document.querySelector("header.top"), set = () => document.documentElement.style.setProperty("--top2-h", (hdr.hidden ? 0 : hdr.offsetHeight) + "px");
+  set(); if (window.ResizeObserver) new ResizeObserver(set).observe(hdr); new MutationObserver(set).observe(hdr, { attributes: true, attributeFilter: ["hidden"] }); }
+{ let t = location.hash.slice(1); t = { tools: "info", bills: "aa" }[t] || t; if (!TABS.includes(t)) { try { t = localStorage.getItem("trip-tab") || "info"; } catch (e) { t = "info"; } } showTab(t); }
+
+/* ---------- info ---------- */
+let TRIP_START = Infinity, TRIP_END = Infinity;   // set from the trip (its own timezone)
+const pad = n => String(n).padStart(2, "0");
+function renderCountdown() {
+  const now = Date.now(), cd = $("#countdown");
+  if (!isFinite(TRIP_START)) return;   // trip not loaded yet
+  if (now < TRIP_START) {
+    let s = Math.floor((TRIP_START - now) / 1000);
+    const d = Math.floor(s / 86400); s %= 86400;
+    if (cd.classList.contains("msg")) { cd.classList.remove("msg"); cd.innerHTML = '<div><b id="cdD"></b><span>天</span></div><div><b id="cdH"></b><span>时</span></div><div><b id="cdM"></b><span>分</span></div><div><b id="cdS"></b><span>秒</span></div>'; }
+    $("#cdD").textContent = d; $("#cdH").textContent = pad(Math.floor(s / 3600)); $("#cdM").textContent = pad(Math.floor(s % 3600 / 60)); $("#cdS").textContent = pad(s % 60);
+    return;
+  }
+  const day = Math.floor((now - TRIP_START) / 86400000) + 1;
+  $("#cdLabel").textContent = `${(Trip.trip || {}).title || ""}${now < TRIP_END ? "进行中" : ""}`;
+  cd.classList.add("msg");
+  cd.innerHTML = `<div><b>${now < TRIP_END ? `旅行中 · 第 ${day} 天` : "旅行结束，记得结清 AA 账"}</b></div>`;
+}
+function renderInfo() {
+  if (window.tripNav) tripNav.setMembers(settings.members || DEFAULT_SETTINGS.members);
+  renderFlights($("#flights"), { name: nm });
+  $("#hotels").innerHTML = HOTELS.map(h => `<div class="flight"><span class="pill">${h.when}</span><b>${h.name}</b>${h.addr ? `<span class="muted">${h.addr}</span>` : ""}${h.note ? `<span>${h.note.replace(/\{(m\d)\}/g, (_, id) => esc(nm(id)))}</span>` : ""}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.q)}" target="_blank" rel="noopener"><i data-lucide="navigation" class="i18"></i>Google Maps 导航</a></div>`).join("");
+  const when = settings.ratesAt ? new Date(settings.ratesAt).toLocaleDateString("zh-CN") : "默认估算";
+  const others = Trip.currencies().filter(c => c !== "CNY");
+  const line = others.length ? `1 元人民币 ≈ ${others.map(c => `${fmt(rate(c), c)} ${Trip.CUR_NAME[c] || c}`).join(" ≈ ")}（${when}）` : "这次旅行只用人民币";
+  $("#rateLine").textContent = line; $("#rateLine2").textContent = line;
+  $("#nameEdit").innerHTML = IDS.map(id => `<div class="row"><span class="muted" style="width:56px">成员 ${id.slice(1)}</span><input type="text" maxlength="20" data-name="${id}" value="${esc(nm(id))}" style="flex:1"></div>`).join("");
+  convert();
+}
+// converter: 人民币 ↔ the trip's local currency (first of trip.currencies)
+function convert() {
+  const L = Trip.local(), c = parseFloat($("#cnyIn").value), v = parseFloat($("#vndIn").value);
+  $("#vndOut").textContent = isFinite(c) ? fmt(c * rate(L), L) + " " + (SYM[L] || L) : "—";
+  $("#cnyOut").textContent = isFinite(v) ? "¥" + fmt(v / rate(L), "CNY") : "—";
+}
+function renderStatic() {
+  const t = Trip.trip || {}, L = Trip.local(), md = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : "";
+  $("#heroSub").textContent = `${md(t.start)} – ${md(t.end)} · ${(t.route || []).join(" → ")}`;
+  $("#cdLabel").textContent = `距离 ${md(t.start)} ${(t.route || [])[0] || ""}出发（当地时间）`;
+  $("#vndIn").placeholder = Trip.CUR_NAME[L] || L; $("#locSym").textContent = (SYM[L] || L) + " ≈";
+  $("#moneyNote").textContent = L === "VND" ? "越南盾面额大、0 很多，付钱前看清楚。夜市和小店多数只收现金；大酒店、Grab 可以刷卡。不用给小费。" : "";
+  const ph = window.TRIP_PHRASES || [];
+  $("#phrCard").hidden = !ph.length;
+  $("#phrTitle").textContent = { VN: "常用越南语", KR: "常用韩语", JP: "常用日语", TH: "常用泰语" }[t.countryCode] || "常用语";
+  $("#phr").innerHTML = ph.map(([vi, py, zh]) => `<button type="button" class="ph" data-vi="${esc(vi)}" title="点一下复制"><b>${esc(vi)}</b><i>${esc(py || "")}</i><span>${esc(zh)}</span></button>`).join("");
+  const tips = window.TRIP_TIPS || [];
+  $("#tipsCard").hidden = !tips.length;
+  $("#tips").innerHTML = tips.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  $("#sosTitle").textContent = `紧急电话${t.country ? `（${t.country}）` : ""}`;
+  $("#sos").innerHTML = (window.TRIP_SOS || []).map(([label, num, url]) => `<dt>${esc(label)}</dt><dd>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(num)}</a>` : /^[\d+ -]+$/.test(num) ? `<a href="tel:${esc(num)}">${esc(num)}</a>` : esc(num)}</dd>`).join("");
+  // currency pickers
+  const cur = Trip.currencies(), sel = $("#expCur").value;
+  $("#expCur").innerHTML = cur.map(c => `<option value="${c}">${SYM[c] || ""} ${Trip.CUR_NAME[c] || c}</option>`).join("");
+  if (cur.includes(sel)) $("#expCur").value = sel;
+  $("#aaCurSeg").innerHTML = cur.map(c => `<button type="button" data-cur="${c}">${esc(SYM[c] || c)}</button>`).join("");
+  $("#rpCur").innerHTML = ["CNY", ...cur.filter(c => c !== "CNY")].map(c => `<option value="${c}">${SYM[c] || ""} ${Trip.CUR_NAME[c] || c}</option>`).join("");
+}
+$("#cnyIn").addEventListener("input", convert); $("#vndIn").addEventListener("input", convert);
+// 我是谁 lives in the top-bar avatar (trip-nav.js); 修改成员名字 opens a small dialog from that menu
+const openNames = () => { renderInfo(); $("#namesDlg").hidden = false; const f = document.querySelector("[data-name]"); if (f) f.focus(); };
+const closeNames = () => { $("#namesDlg").hidden = true; };
+$("#namesDlg").addEventListener("click", e => { if (e.target === $("#namesDlg") || e.target.closest("[data-namesclose]")) closeNames(); });
+if (window.tripNav) tripNav.configure({ onChange: id => { me = id; renderAll(); } });
+const avatarOf = id => window.tripInitial ? tripInitial(id, settings.members || DEFAULT_SETTINGS.members) : nm(id).slice(0, 1);
+// 准备进度 (desktop info page): checklist + packing per person; tap to open that tab
+function renderProgress() {
+  const el = $("#progList"); if (!el) return;
+  const bar = (d, n, label, tab) => `<button type="button" class="pb" data-gotab="${tab}"><span class="pl">${label}</span><span class="track"><b style="width:${n ? d / n * 100 : 0}%"></b></span><span class="pv num">${d} / ${n}</span></button>`;
+  el.innerHTML = IDS.map(id => { const c = PERSONAL.filter(([k]) => checks[id]?.[k]).length, p = window.Packing ? Packing.progress(id) : { d: 0, n: 0 };
+    return `<div class="pr" style="--p:var(--${id})"><span class="av sm">${esc(avatarOf(id))}</span><span class="nm">${esc(nm(id))}${id === me ? "（我）" : ""}</span>
+      ${bar(c, PERSONAL.length, "清单", "check")}${bar(p.d, p.n, "行李", "packing")}</div>`; }).join("");
+}
+$("#progList").addEventListener("click", e => { const b = e.target.closest("[data-gotab]"); if (b) showTab(b.dataset.gotab, true); });
+// phrases: tap to copy the Vietnamese
+$("#phr").addEventListener("click", e => { const b = e.target.closest("[data-vi]"); if (!b) return;
+  const t = b.dataset.vi; try { navigator.clipboard.writeText(t).then(() => toast("已复制：" + t), () => toast(t)); } catch (er) { toast(t); } });
+$("#saveNames").addEventListener("click", async () => {
+  if (!ready()) return toast("还没连上数据库");
+  const members = {}; for (const id of IDS) { const v = document.querySelector(`[data-name="${id}"]`).value.trim().slice(0, 20); members[id] = v || nm(id); }
+  try { await saveSettings({ members }); toast("名字已保存"); closeNames(); } catch (e) { toast("保存失败，请稍后再试"); }
+});
+// names and rates live in the trip doc ('meta/settings' maps onto it); members may only change rates
+async function saveSettings(patch) {
+  await db.doc("meta/settings").update({ ...patch, updatedAt: Date.now() });
+}
+$("#refreshRates").addEventListener("click", async () => {
+  if (!ready()) return toast("还没连上数据库");
+  $("#refreshRates").disabled = true;
+  try {
+    const r = await (await fetch("https://open.er-api.com/v6/latest/CNY")).json();
+    if (r.result !== "success") throw new Error("rate api");
+    await saveSettings({ rates: Object.fromEntries(Trip.currencies().filter(c => c !== "CNY" && r.rates[c]).map(c => [c, r.rates[c]])), ratesAt: Date.now() });
+    toast("汇率已更新");
+  } catch (e) { toast("汇率获取失败，先用原来的"); }
+  $("#refreshRates").disabled = false;
+});
+
+/* ---------- checklist ---------- */
+function renderChecklist() {
+  // rows are display:contents on phones (same flat grid as before) and real table rows on desktop
+  let h = `<div class="gr hd"><div></div>` + IDS.map(id => `<div class="h ${id === me ? "me" : ""}"><span class="av sm" style="--p:var(--${id})">${esc(avatarOf(id))}</span>${esc(nm(id))}</div>`).join("") + `</div>`;
+  for (const [k, label] of PERSONAL) {
+    h += `<div class="gr"><div>${label}</div>` + IDS.map(id => `<label><input type="checkbox" data-p="${id}" data-k="${k}" ${checks[id]?.[k] ? "checked" : ""} ${ready() && checksLoaded ? "" : "disabled"} aria-label="${esc(nm(id))}：${label}"></label>`).join("") + `</div>`;
+  }
+  h += `<div class="gr ft"><div class="prog">完成</div>` + IDS.map(id => { const n = PERSONAL.filter(([k]) => checks[id]?.[k]).length; return `<div class="prog">${n}/${PERSONAL.length}</div>`; }).join("") + `</div>`;
+  $("#personal").innerHTML = h;
+  renderProgress();
+  const g = checks.group || {};
+  $("#group").innerHTML = GROUP.map(([k, label]) => {
+    const it = g[k] || {}; return `<div class="task ${it.done ? "done" : ""}">
+      <input type="checkbox" data-g="${k}" ${it.done ? "checked" : ""} ${ready() && checksLoaded ? "" : "disabled"} aria-label="${label}">
+      <span class="t">${label}</span>
+      <select data-owner="${k}" ${ready() && checksLoaded ? "" : "disabled"} aria-label="谁负责"><option value="">谁负责</option>${IDS.map(id => `<option value="${id}" ${it.owner === id ? "selected" : ""}>${esc(nm(id))}</option>`).join("")}</select></div>`;
+  }).join("");
+}
+document.addEventListener("change", async e => {
+  const t = e.target;
+  try {
+    if (t.dataset.p) {
+      // Merge only the changed box so two people ticking at once can't wipe each other's ticks
+      await db.doc("checklist/" + t.dataset.p).set({ items: { [t.dataset.k]: t.checked }, at: Date.now() }, { merge: true });
+    } else if (t.dataset.g || t.dataset.owner) {
+      const k = t.dataset.g || t.dataset.owner, cur = (checks.group || {})[k] || {};
+      const next = t.dataset.g ? { done: t.checked, owner: cur.owner || "" } : { done: !!cur.done, owner: t.value };
+      await db.doc("checklist/group").set({ items: { [k]: next }, at: Date.now() }, { merge: true });
+    }
+  } catch (err) { if (t.dataset.p || t.dataset.g || t.dataset.owner) { toast("保存失败，请稍后再试"); renderChecklist(); } }
+});
+
+/* ---------- AA 账单: see bills.js (renderAA, renderForm, settle, subscribeAA) ---------- */
+
+
+/* ---------- 攻略收藏: shared link list; paste a 小红书 share text and the URL + title are extracted ---------- */
+const LINK_TAGS = ["签证", "交通", "住宿", "吃喝", "玩乐", "其他"];
+let links = [], lkTag = "其他", lkArmed = "", lkArmedTimer = 0;
+function parseShare(text) {
+  const m = text.match(/https?:\/\/[^\s，。、]+/);
+  if (!m) return null;
+  let title = text.slice(0, m.index).replace(/打开【小红书】.*$/s, "").replace(/(\.{3}|…)+\s*$/, "").replace(/\s+/g, " ").trim();
+  return { url: m[0], title };
+}
+function renderLinks() {
+  $("#lkTags").innerHTML = LINK_TAGS.map(t => `<button type="button" class="chip ${t === lkTag ? "on" : ""}" data-lktag="${t}" aria-pressed="${t === lkTag}">${t}</button>`).join("");
+  $("#lkAdd").disabled = !ready();
+  if (!links.length) { $("#lkList").innerHTML = `<div class="card lk-empty"><i data-lucide="bookmark"></i><p class="empty">还没有收藏。</p><p class="sub">把小红书的分享内容粘贴到左边，就会出现在这里。</p></div>`; lucideIcons(); return; }
+  $("#lkList").innerHTML = LINK_TAGS.filter(t => links.some(l => l.tag === t)).map(t => `<div class="card"><h2>${t}</h2>${
+    links.filter(l => l.tag === t).sort((a, b) => (b.at || 0) - (a.at || 0)).map(l => `<div class="lk">
+      <a class="t" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.title)}</a>
+      ${Trip.mine(l) ? `<button class="del${lkArmed === l.id ? " armed" : ""}" data-lkdel="${esc(l.id)}" style="border:0;background:none;color:var(--bad);font-size:12.5px;cursor:pointer">${lkArmed === l.id ? "确认删除？" : "删除"}</button>` : "<span></span>"}
+      <span class="meta">${l.who ? esc(nm(l.who)) + " 收藏 · " : ""}${new Date(l.at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })} · ${esc(new URL(l.url).hostname.replace(/^www\./, ""))}</span></div>`).join("")}</div>`).join("");
+}
+$("#lkTags").addEventListener("click", e => { const b = e.target.closest("[data-lktag]"); if (b) { lkTag = b.dataset.lktag; renderLinks(); } });
+$("#lkText").addEventListener("input", () => { const r = parseShare($("#lkText").value); if (r && r.title && !$("#lkTitle").value) $("#lkTitle").placeholder = "标题：" + r.title.slice(0, 40); });
+$("#lkForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!ready()) return toast("还没连上数据库");
+  const r = parseShare($("#lkText").value.trim());
+  if (!r) return toast("没找到链接，要以 http 开头");
+  const title = ($("#lkTitle").value.trim() || r.title || new URL(r.url).hostname).slice(0, 80);
+  $("#lkAdd").disabled = true;
+  try {
+    await db.collection("links").add({ title, url: r.url.slice(0, 500), tag: lkTag, who: me || "", by: uid, ...(me ? { byMember: me } : {}), at: Date.now() });
+    $("#lkText").value = ""; $("#lkTitle").value = ""; $("#lkTitle").placeholder = "标题（可不填）"; toast("已收藏");
+  } catch (err) { toast("保存失败，请稍后再试"); }
+  $("#lkAdd").disabled = !ready();
+});
+$("#lkList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-lkdel]"); if (!b) return;
+  // tap twice to delete (confirmed on the page, no native dialog); kept by id so live updates don't reset it
+  const id = b.dataset.lkdel; clearTimeout(lkArmedTimer);
+  if (lkArmed !== id) { lkArmed = id; renderLinks(); lkArmedTimer = setTimeout(() => { lkArmed = ""; renderLinks(); }, 3500); return; }
+  lkArmed = "";
+  try { await db.doc("links/" + b.dataset.lkdel).delete(); toast("已删除"); } catch (err) { toast("删除失败"); }
+});
+
+const lucideIcons = () => { try { if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.75 } }); } catch (e) {} };
+function renderAll() { renderInfo(); renderChecklist(); renderForm(); renderAA(); renderLinks(); Packing.render(); lucideIcons(); }
+bindAA();
+Packing.init({ root: document.querySelector('[data-panel="packing"]'), IDS, nm, me: () => me, ready, db: () => db, toast, icons: lucideIcons, avatar: avatarOf, onData: () => renderProgress(),
+  setMe: id => { me = id; try { localStorage.setItem("trip-me", me); } catch (e) {} renderAll(); } });
+renderCountdown(); setInterval(renderCountdown, 1000); renderAll();
+
+/* ---------- Firebase: load in background, anonymous sign-in, live data ---------- */
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+Trip.start().then(({ db: d, uid: u, trip }) => {
+  db = d; uid = u;
+  const fill = (arr, v) => arr.splice(0, arr.length, ...(v || []));
+  const apply = t => {
+    fill(IDS, Trip.memberIds()); settings = { members: t.members || {}, rates: t.rates || {}, ratesAt: t.ratesAt || 0 };
+    TRIP_START = Trip.startMs(); TRIP_END = Trip.endMs() + 1000; setTripDays(t.start, t.end);
+    if (window.tripNav) tripNav.configure({ members: t.members || {}, modules: t.modules || {}, onEditNames: Trip.isOwner ? openNames : undefined });
+    document.querySelectorAll('.tab[data-tab="packing"]').forEach(b => { b.hidden = (t.modules || {}).packing === false; });
+  };
+  fill(HOTELS, window.TRIP_HOTELS); fill(GROUP, window.TRIP_GROUP); fill(PERSONAL, window.TRIP_PERSONAL);
+  if (window.TRIP_PACKING && TRIP_PACKING.length) Packing.setCatalog(TRIP_PACKING, window.TRIP_STAYS || []);
+  me = Trip.me; apply(trip);
+  resetForm();   // the bills form picked its default participants before the members were known
+  $("#who").textContent = Trip.canEdit ? "已连接，同行的人看到的是同一份数据。" : "已连接（只读）";
+  renderStatic(); showTab(location.hash.slice(1)); renderAll(); renderCountdown();
+  Trip.onTrip(t => { apply(t); renderStatic(); renderAll(); });
+  subscribeAA(db);
+  db.collection("links").onSnapshot(s => { links = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(l => /^https?:\/\//.test(l.url || "")); renderLinks(); }, () => {});
+  Packing.subscribe(db);
+  db.collection("checklist").onSnapshot(s => { checksLoaded = true; checks = {}; s.docs.forEach(d => { checks[d.id] = d.data().items || {}; }); renderChecklist(); }, () => {});
+}).catch(e => { console.warn('[trip]', e && e.message); $("#who").textContent = "无法打开这次旅行。如果你在中国大陆，可能需要开启 VPN。"; });
+</script>
+</body>
+</html>

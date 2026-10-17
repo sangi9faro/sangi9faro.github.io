@@ -173,6 +173,8 @@ async function migrate() {
       personal: window.TRIP_PERSONAL.map(([k, label]) => ({ k, label })),
       checklistItems: window.TRIP_PERSONAL.map(([k, label]) => ({ k, label })),
       phrases: window.TRIP_PHRASES.map(([vi, py, zh]) => ({ vi, py, zh })),
+      stays: (window.TRIP_STAYS || []).map(([k, label]) => ({ k, label })),
+      notices: window.TRIP_NOTICES || [], highlight: window.TRIP_HIGHLIGHT || null, guideNotes: window.TRIP_GUIDE_NOTES || [],
       tips: window.TRIP_TIPS.map(([k, v]) => ({ k, v })),
       sos: window.TRIP_SOS.map(([label, number, url]) => ({ label, number, ...(url ? { url } : {}) })),
       packingItems: window.Packing.CATS.map(c => ({ id: c.id, label: c.label, icon: c.icon, items: c.items.map(([k, label, w, note, strong]) => ({ k, label, w, ...(note ? { note } : {}), ...(strong ? { strong: true } : {}) })) })),

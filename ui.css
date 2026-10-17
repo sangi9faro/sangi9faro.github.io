@@ -219,3 +219,12 @@ body.tn{--tabbar-h:calc(56px + var(--safe-b))}
     background:linear-gradient(rgba(0,0,0,.25),transparent);z-index:9999;pointer-events:none}
 }
 @media (display-mode: standalone) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body::after{display:none} }
+
+/* ── /t/ shared trip pages (core.js): read-only banner and full-page messages ── */
+.trip-ro{position:sticky;top:0;z-index:960;padding:8px 16px calc(8px);padding-top:calc(8px + var(--safe-t));background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700;text-align:center}
+body.g .trip-ro{position:fixed;left:0;right:0;top:auto;bottom:calc(var(--tabbar-h) + 128px);z-index:850;margin:0 12px;border-radius:12px;padding-top:8px}
+.trip-screen{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:24px 16px;background:var(--bg)}
+.trip-screen .card{max-width:420px;padding:24px;display:grid;gap:12px;justify-items:start}
+.trip-screen h2{font-size:20px}
+.trip-readonly .tn-me,.trip-readonly #aaFab,.trip-readonly [data-repay],.trip-readonly #aaRepayBtn,.trip-readonly #aaPickMe,.trip-readonly #aaPickMe2,
+.trip-readonly .aa-ptabs,.trip-readonly #aaFormBox,.trip-readonly .c-lkadd,.trip-readonly #pkStart,.trip-readonly #newBtn{display:none!important}

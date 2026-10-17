@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1419" media="(prefers-color-scheme: dark)">
+<script>/* theme-color follows a manual light/dark switch (data-theme) */(function(){var C={light:'#F4F6F8',dark:'#0E1419'},r=document.documentElement;function s(){var t=r.getAttribute('data-theme');document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=C[t]||(/dark/.test(m.media)?C.dark:C.light)})}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['data-theme']})})();</script>
+<meta name="robots" content="noindex,nofollow">
+<title>投票</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%230B7A8C%22/><path d=%22M30 52l14 14 26-30%22 stroke=%22white%22 stroke-width=%2210%22 fill=%22none%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="/ui.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+/* vote.html — page-only styles; tokens and shared components live in ui.css */
+.vw{max-width:760px;margin:0 auto;padding:16px 16px calc(32px + var(--tabbar-h));display:grid;gap:14px}
+.v-side,.v-main{display:grid;gap:14px;align-content:start;min-width:0}
+.card{padding:16px;display:grid;gap:12px}
+.card h2{font-size:17px;line-height:1.35;display:flex;align-items:center;gap:8px}
+.sub{margin:0;color:var(--ink-2);font-size:13px}
+.status{font-size:13px;color:var(--ink-2)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* page buttons map onto ui.css: .btn = primary, .ghost = secondary, .danger = destructive */
+.btn:not(.ghost):not(.danger){background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+.btn.danger{background:var(--surface-2);color:var(--bad)}
+.btn.small{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
+input[type=text],select{min-height:44px;background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:0 12px;min-width:0;width:100%;font-size:16px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:12px;padding:3px;justify-self:start}
+.seg button{min-height:36px;border:0;background:none;border-radius:9px;padding:0 14px;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.optrow{display:flex;gap:6px}
+.optrow button{border:0;background:none;color:var(--ink-2);font-size:20px;cursor:pointer;min-width:44px}
+.meta{font-size:13px;color:var(--ink-2)}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent);margin-right:6px}
+.tag.closed{background:var(--surface-2);color:var(--ink-2)}
+/* option = button with a result bar behind it */
+.opt{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;min-height:52px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;cursor:pointer;transition:transform .12s}
+.opt:active{transform:scale(.98)}
+.opt:disabled{cursor:default}
+.opt .bar{position:absolute;inset:0 auto 0 0;background:var(--accent-soft);transition:width .4s;z-index:0}
+.opt>*:not(.bar){position:relative;z-index:1}
+.opt .mark{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;color:#fff;background:var(--surface)}
+.opt.multi .mark{border-radius:6px}
+.opt.mine{border-color:var(--accent)}
+.opt.mine .mark{background:var(--accent);border-color:var(--accent)}
+.opt.lead .bar{background:color-mix(in srgb,var(--good) 20%,transparent)}
+.opt .lbl{font-weight:700;word-break:break-word}
+.opt .who{display:block;font-size:12px;font-weight:500;color:var(--ink-2)}
+.opt .n{font:700 13px var(--font-num);color:var(--ink-2);white-space:nowrap}
+.empty{color:var(--ink-2);font-size:14px;text-align:center;padding:10px 0}
+/* result banner for the finished first poll */
+.banner{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:#0B7A8C;color:#fff;border-radius:var(--r-l);padding:16px 18px}
+.banner svg.lucide{width:28px;height:28px}
+.banner b{display:block;font-size:18px}
+.banner span{font-size:13px;opacity:.85}
+.banner .btn{background:#fff!important;color:#0B7A8C!important}
+#polls{display:grid;gap:14px;align-items:start}
+#toast{position:fixed;left:50%;bottom:calc(20px + var(--tabbar-h));transform:translate(-50%,16px);opacity:0;z-index:3000;background:#13202B;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;max-width:92vw;text-align:center;pointer-events:none;transition:opacity .25s,transform .25s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+/* tablet/desktop: identity + new-poll column on the left, polls in two columns */
+@media (min-width:768px){
+  .vw{max-width:1600px;grid-template-columns:minmax(300px,340px) minmax(0,1fr);gap:20px;padding:24px}
+  .v-side{position:sticky;top:76px}
+}
+@media (min-width:1200px){
+  .vw{grid-template-columns:360px minmax(0,1fr)}
+  #polls{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<script src="core.js"></script>
+<script src="modules/nav.js" data-title="投票"></script>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<main class="vw">
+  <aside class="v-side">
+    <div class="status" id="who">正在连接数据…</div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2><i data-lucide="circle-plus"></i>发起投票</h2><button class="btn small" id="newBtn" aria-expanded="false">新投票</button></div>
+      <form id="newForm" class="card" style="box-shadow:none;padding:0" hidden>
+        <input type="text" id="pTitle" maxlength="80" placeholder="问题，例如：12/30 晚上去哪个酒吧？" aria-label="投票问题">
+        <div id="pOpts" style="display:grid;gap:8px"></div>
+        <div class="row" style="justify-content:space-between">
+          <button type="button" class="btn ghost small" id="addOpt">加一个选项</button>
+          <div class="seg" role="group" aria-label="单选或多选"><button type="button" data-multi="0" class="on">单选</button><button type="button" data-multi="1">多选</button></div>
+        </div>
+        <button class="btn" id="pCreate" type="submit">发起</button>
+      </form>
+    </div>
+  </aside>
+  <section class="v-main" aria-label="投票">
+    <div id="banner"></div>
+    <div class="seg" role="tablist"><button data-show="open" class="on">进行中</button><button data-show="closed">已截止</button><button data-show="all">全部</button></div>
+    <div id="polls"><div class="sk" style="height:180px"></div></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const IDS = [];   // the trip's members (filled after Trip.start)
+let members = {};
+let db = null, uid = null, me = "", polls = [], ballots = {}, show = "open", multi = false, pollArmed = "", pollArmedTimer = 0;
+// The first poll (where to go) lives in the old votes/people collections; shown read-only as a closed poll
+let legacyVotes = [], legacyPeople = {};
+const DEST = [["pq", "富国岛"], ["nt", "芽庄"], ["dn", "岘港"]];
+const nm = id => members[id] || id;
+const ready = () => !!(db && uid && Trip.canEdit);
+let toastTimer = 0;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2000); }
+
+/* ---------- identity ---------- */
+// 我是谁 is the shared avatar in the top bar (trip-nav.js), same value as the toolbox
+function renderMe() { if (window.tripNav) tripNav.setMembers(members); }
+if (window.tripNav) tripNav.configure({ members, onChange: id => { me = id; renderPolls(); } });
+
+/* ---------- create ---------- */
+function optInput(v = "") { const d = document.createElement("div"); d.className = "optrow";
+  d.innerHTML = `<input type="text" maxlength="40" placeholder="选项" value="${esc(v)}" aria-label="选项"><button type="button" aria-label="删除这个选项">×</button>`; return d; }
+function resetForm() { $("#pTitle").value = ""; $("#pOpts").innerHTML = ""; $("#pOpts").append(optInput(), optInput()); multi = false; renderSeg(); }
+function renderSeg() { document.querySelectorAll("[data-multi]").forEach(b => b.classList.toggle("on", (b.dataset.multi === "1") === multi)); }
+$("#newBtn").addEventListener("click", () => { const f = $("#newForm"); f.hidden = !f.hidden; $("#newBtn").setAttribute("aria-expanded", String(!f.hidden)); if (!f.hidden && !$("#pOpts").children.length) resetForm(); if (!f.hidden) $("#pTitle").focus(); });
+$("#addOpt").addEventListener("click", () => { if ($("#pOpts").children.length >= 8) return toast("最多 8 个选项"); const r = optInput(); $("#pOpts").append(r); r.querySelector("input").focus(); });
+$("#pOpts").addEventListener("click", e => { if (e.target.tagName === "BUTTON" && $("#pOpts").children.length > 2) e.target.parentElement.remove(); });
+document.querySelectorAll("[data-multi]").forEach(b => b.addEventListener("click", () => { multi = b.dataset.multi === "1"; renderSeg(); }));
+$("#newForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!ready()) return toast("还没连上数据库");
+  if (!me) return (toast("先点右上角头像，选一下你是谁"), window.tripNav && tripNav.openPicker());
+  const title = $("#pTitle").value.trim();
+  const options = [...$("#pOpts").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean).map(o => o.slice(0, 40));
+  if (!title) return toast("先写问题");
+  if (options.length < 2) return toast("至少两个选项");
+  if (new Set(options).size !== options.length) return toast("选项不能重复");
+  $("#pCreate").disabled = true;
+  try {
+    await db.collection("polls").add({ title: title.slice(0, 80), options, multi, closed: false, who: me, by: uid, ...(me ? { byMember: me } : {}), at: Date.now() });
+    resetForm(); $("#newForm").hidden = true; $("#newBtn").setAttribute("aria-expanded", "false"); show = "open"; renderTabs(); toast("已发起");
+  } catch (err) { toast("发起失败，请稍后再试"); }
+  $("#pCreate").disabled = false;
+});
+
+/* ---------- list + vote ---------- */
+function renderTabs() { document.querySelectorAll("[data-show]").forEach(b => b.classList.toggle("on", b.dataset.show === show)); renderPolls(); }
+document.querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => { show = b.dataset.show; renderTabs(); }));
+function legacyCard() {
+  const byName = new Map();  // one vote per name (someone voting from two phones counts once)
+  legacyVotes.forEach(v => { const n = legacyPeople[v.id]; if (n && DEST.some(d => d[0] === v.choice)) byName.set(n, v.choice); });
+  const total = byName.size, counts = DEST.map(([k]) => [...byName].filter(([, c]) => c === k).map(([n]) => n)), max = Math.max(0, ...counts.map(c => c.length));
+  return `<article class="card"><div><span class="tag closed">已截止</span><span class="meta">单选 · 第一个投票</span></div>
+    <h2>越南去哪儿？</h2>
+    <div style="display:grid;gap:8px">${DEST.map(([k, l], i) => { const c = counts[i], pct = total ? Math.round(c.length * 100 / total) : 0;
+      return `<div class="opt ${c.length && c.length === max ? "lead" : ""}" style="cursor:default"><span class="bar" style="width:${pct}%"></span><span class="mark"></span>
+        <span class="lbl">${l}<span class="who">${c.map(esc).join("、")}</span></span><span class="n">${c.length} 票 · ${pct}%</span></div>`; }).join("")}</div>
+    <div class="meta">${total} 人投票 · 结果：<b>芽庄</b></div></article>`;
+}
+// result banner for the finished first poll (top of the page)
+function renderBanner() {
+  const byName = new Map(); legacyVotes.forEach(v => { const n = legacyPeople[v.id]; if (n && DEST.some(d => d[0] === v.choice)) byName.set(n, v.choice); });
+  if (!byName.size) { $("#banner").innerHTML = ""; return; }
+  const counts = DEST.map(([k, l]) => [l, [...byName.values()].filter(c => c === k).length]).sort((a, b) => b[1] - a[1]);
+  $("#banner").innerHTML = `<div class="banner"><i data-lucide="flag"></i><div><b>越南去哪儿：最终去${counts[0][0]}</b><span class="num">${counts[0][1]} 票 / ${byName.size} 人投票 · 已截止</span></div><button class="btn small" id="seeLegacy">看结果</button></div>`;
+  $("#seeLegacy").onclick = () => { show = "closed"; renderTabs(); $("#polls").scrollIntoView({ behavior: "smooth", block: "start" }); };
+}
+const lucideIcons = () => { try { if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.75 } }); } catch (e) {} };
+function renderPolls() {
+  renderBanner();
+  const list = polls.filter(p => show === "all" || (show === "closed") === !!p.closed).sort((a, b) => (a.closed - b.closed) || (b.at - a.at));
+  const legacy = show === "open" ? "" : legacyCard();
+  if (!list.length) { $("#polls").innerHTML = (show === "closed" ? "" : `<div class="card"><p class="empty">还没有进行中的投票，点「新投票」发起一个。</p></div>`) + legacy; lucideIcons(); return; }
+  $("#polls").innerHTML = list.map(p => {
+    const bs = ballots[p.id] || {}, voters = IDS.filter(id => bs[id]), counts = p.options.map((_, i) => voters.filter(id => bs[id].includes(i)));
+    const max = Math.max(0, ...counts.map(c => c.length)), mine = bs[me] || [], canVote = ready() && me && !p.closed;
+    const missing = IDS.filter(id => !bs[id]);
+    return `<article class="card" data-poll="${esc(p.id)}">
+      <div><span class="tag ${p.closed ? "closed" : ""}">${p.closed ? "已截止" : "进行中"}</span><span class="meta">${p.multi ? "多选" : "单选"} · ${esc(nm(p.who))} 发起 · ${new Date(p.at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}</span></div>
+      <h2>${esc(p.title)}</h2>
+      <div style="display:grid;gap:8px">${p.options.map((o, i) => {
+        const c = counts[i], pct = voters.length ? Math.round(c.length * 100 / voters.length) : 0;
+        return `<button class="opt ${p.multi ? "multi" : ""} ${mine.includes(i) ? "mine" : ""} ${c.length && c.length === max ? "lead" : ""}" data-opt="${i}" ${canVote ? "" : "disabled"} aria-pressed="${mine.includes(i)}">
+          <span class="bar" style="width:${pct}%"></span><span class="mark">${mine.includes(i) ? "✓" : ""}</span>
+          <span class="lbl">${esc(o)}<span class="who">${c.map(nm).map(esc).join("、")}</span></span><span class="n">${c.length} 票 · ${pct}%</span></button>`;
+      }).join("")}</div>
+      <div class="meta">${voters.length}/4 人已投${missing.length ? " · 还没投：" + missing.map(nm).map(esc).join("、") : " · 全员到齐"}</div>
+      ${!me && !p.closed ? `<p class="sub">先点右上角头像选你是谁，才能投票。</p>` : ""}
+      ${Trip.mine(p) ? `<div class="row"><button class="btn ghost small" data-close="${p.closed ? 0 : 1}">${p.closed ? "重新开放" : "截止投票"}</button><button class="btn danger small${pollArmed === p.id ? " armed" : ""}" data-del="1">${pollArmed === p.id ? "确认删除？" : "删除"}</button></div>` : ""}
+    </article>`;
+  }).join("") + legacy;
+  lucideIcons();
+}
+$("#polls").addEventListener("click", async e => {
+  const card = e.target.closest("[data-poll]"); if (!card) return;
+  const p = polls.find(x => x.id === card.dataset.poll); if (!p) return;
+  const o = e.target.closest("[data-opt]"), cl = e.target.closest("[data-close]"), del = e.target.closest("[data-del]");
+  try {
+    if (o) {
+      if (!me) return (toast("先点右上角头像，选一下你是谁"), window.tripNav && tripNav.openPicker());
+      const i = +o.dataset.opt, cur = (ballots[p.id] || {})[me] || [];
+      const next = p.multi ? (cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i].sort((a, b) => a - b)) : (cur.length === 1 && cur[0] === i ? [] : [i]);
+      const ref = db.doc(`polls/${p.id}/ballots/${me}`);
+      if (next.length) await ref.set({ choices: next, by: uid, at: Date.now() }); else await ref.delete();
+    } else if (cl) {
+      await db.doc("polls/" + p.id).update({ closed: cl.dataset.close === "1" }); toast(cl.dataset.close === "1" ? "已截止" : "已重新开放");
+    } else if (del) {
+      // tap twice (confirmed on the page, no native dialog); kept by poll id so live updates don't reset it
+      clearTimeout(pollArmedTimer);
+      if (pollArmed !== p.id) { pollArmed = p.id; renderPolls(); pollArmedTimer = setTimeout(() => { pollArmed = ""; renderPolls(); }, 3500); return; }
+      pollArmed = "";
+      // delete ballots first so no orphaned votes are left behind
+      const bs = await db.collection(`polls/${p.id}/ballots`).get();
+      await Promise.all(bs.docs.map(d => d.ref.delete()));
+      await db.doc("polls/" + p.id).delete(); toast("已删除");
+    }
+  } catch (err) { toast(err && err.code === "permission-denied" ? "这个投票已截止，不能再改" : "保存失败，请稍后再试"); }
+});
+
+renderMe(); renderTabs();
+
+/* ---------- Firebase: background load, anonymous sign-in, live data ---------- */
+function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.async = false; el.onload = res; el.onerror = () => rej(new Error(src)); document.head.appendChild(el); }); }
+Trip.start().then(({ db: d, uid: u, trip }) => {
+  db = d; uid = u; me = Trip.me;
+  const apply = t => { members = { ...(t.members || {}) }; IDS.splice(0, IDS.length, ...Trip.memberIds()); renderMe(); renderPolls(); };
+  apply(trip); Trip.onTrip(apply);
+  if ((trip.modules || {}).vote === false) { location.replace(Trip.link('guide.html')); return; }   // 投票 is switched off for this trip
+  $("#who").textContent = Trip.canEdit ? "已连接，同行的人看到的是同一份投票。" : "已连接（只读）";
+  // ballots per poll (a collection-group query would reach into other trips)
+  const ballotSubs = {};
+  db.collection("polls").onSnapshot(s => {
+    polls = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => Array.isArray(p.options));
+    for (const p of polls) if (!ballotSubs[p.id]) ballotSubs[p.id] = db.collection(`polls/${p.id}/ballots`).onSnapshot(b => {
+      ballots[p.id] = {}; b.docs.forEach(x => { ballots[p.id][x.id] = x.data().choices || []; }); renderPolls(); }, () => {});
+    for (const id of Object.keys(ballotSubs)) if (!polls.some(p => p.id === id)) { ballotSubs[id](); delete ballotSubs[id]; delete ballots[id]; }
+    renderPolls();
+  }, () => {});
+  db.collection("votes").onSnapshot(s => { legacyVotes = s.docs.map(d => ({ id: d.id, ...d.data() })); renderPolls(); }, () => {});
+  db.collection("people").onSnapshot(s => { legacyPeople = {}; s.docs.forEach(d => { if (d.data().name) legacyPeople[d.id] = d.data().name; }); renderPolls(); }, () => {});
+}).catch(e => { console.warn('[trip]', e && e.message); $("#who").textContent = "无法打开这次旅行。如果你在中国大陆，可能需要开启 VPN。"; });
+</script>
+</body>
+</html>
